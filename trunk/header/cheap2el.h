@@ -67,9 +67,52 @@ cheap2el_map_from_loaded_image(
         CHEAP2EL_ERROR_CODE *err
         );
 
-int
-cheap2el_get_export_entries(
-        PCHEAP2EL_PE_IMAGE pei
+PIMAGE_EXPORT_DIRECTORY
+cheap2el_get_export_directory(
+        PCHEAP2EL_PE_IMAGE pe
+        );
+
+typedef struct _CHEAP2EL_EXPORT_ENTRY {
+    int order;
+    int hint;
+    DWORD rvaOfFunction;
+    DWORD rvaOfName;
+    DWORD AddressOfFunction;
+    DWORD AddressOfName;
+    DWORD AddressOfOrdinal;
+    LPVOID Function;
+    LPCSTR Name;
+    WORD Ordinal;
+    BOOL isForwarded;
+    LPCSTR ForwardedName;
+} CHEAP2EL_EXPORT_ENTRY, *PCHEAP2EL_EXPORT_ENTRY;
+
+typedef BOOL (*CHEAP2EL_ENUM_EXPORT_CALLBACK)(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_EXPORT_DIRECTORY ed,
+        PCHEAP2EL_EXPORT_ENTRY ee,
+        LPVOID lpApplicationData
+        );
+
+void
+cheap2el_enumerate_export_tables(
+        PCHEAP2EL_PE_IMAGE pe,
+        CHEAP2EL_ENUM_EXPORT_CALLBACK cb,
+        LPVOID lpApplicationData
+        );
+
+typedef struct _CHEAP2EL_GET_EXPORT_RVA_BY_ARG {
+    union {
+        LPCSTR Name;
+        DWORD Ordinal;
+    } By;
+    DWORD rva;
+} CHEAP2EL_GET_EXPORT_RVA_BY_ARG, *PCHEAP2EL_GET_EXPORT_RVA_BY_ARG;
+
+DWORD
+cheap2el_get_export_rva_by_name(
+        PCHEAP2EL_PE_IMAGE pe, 
+        LPCSTR name
         );
 
 int
@@ -81,6 +124,7 @@ int
 cheap2el_resolve_iat(
         PCHEAP2EL_PE_IMAGE pei
         );
+
 
 #ifdef __cplusplus
 }
