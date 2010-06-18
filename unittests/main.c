@@ -29,6 +29,14 @@ extern void test_map_to_memory_failure(void);
 extern void test_map_to_memory_success(void);
 extern void test_map_from_loaded_image_failure(void);
 extern void test_map_from_loaded_image_success(void);
+extern void test_get_export_directory_failure(void);
+extern void test_get_export_directory_success(void);
+extern void test_enumerate_export_tables_0(void);
+extern void test_enumerate_export_tables(void);
+extern void test_enumerate_export_tables_forward(void);
+extern void test_get_export_rva_by_name(void);
+extern void test_get_export_rva_by_ordinal1(void);
+extern void test_get_export_rva_by_ordinal2(void);
 
 CU_TestInfo test_array1[] = {
     {"test_get_sizeofimage_from_file", test_get_sizeofimage_from_file},
@@ -36,6 +44,13 @@ CU_TestInfo test_array1[] = {
     {"test_map_to_memory_success", test_map_to_memory_success},
     {"test_map_from_loaded_image_failure", test_map_from_loaded_image_failure},
     {"test_map_from_loaded_image_success", test_map_from_loaded_image_success},
+    {"test_get_export_directory_failure", test_get_export_directory_failure},
+    {"test_get_export_directory_success", test_get_export_directory_success},
+    {"test_enumerate_export_tables_0", test_enumerate_export_tables_0},
+    {"test_enumerate_export_tables_forward", test_enumerate_export_tables_forward},
+    {"test_get_export_rva_by_name", test_get_export_rva_by_name},
+    {"test_get_export_rva_by_ordinal1", test_get_export_rva_by_ordinal1},
+    {"test_get_export_rva_by_ordinal2", test_get_export_rva_by_ordinal2},
     CU_TEST_INFO_NULL,
 };
 

@@ -22,6 +22,7 @@
 
 #include "cheap2el.h"
 #include <windows.h>
+#include <string.h>
 
 // {{{ cheap2el_get_sizeofimage_from_file()
 
@@ -193,4 +194,181 @@ cheap2el_map_from_loaded_image(
 }
 
 // }}}
+// {{{ cheap2el_get_export_directory()
+
+PIMAGE_EXPORT_DIRECTORY
+cheap2el_get_export_directory(
+        PCHEAP2EL_PE_IMAGE pe
+        )
+{
+    PIMAGE_DATA_DIRECTORY pdd = NULL;
+    DWORD dwptr = 0;
+
+    pdd = &(pe->ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT]);
+    if (0 == pdd->VirtualAddress) {
+        return NULL;
+    }
+
+    dwptr = pe->dwActualImageBase + pdd->VirtualAddress;
+    return (PIMAGE_EXPORT_DIRECTORY)(dwptr);
+}
+
+// }}}
+// {{{ _cheap2el_export_is_forwarded()
+
+static BOOL
+_cheap2el_export_is_forwarded(
+        PCHEAP2EL_PE_IMAGE pe, DWORD ed_rva, DWORD func_rva)
+{
+    int i;
+    DWORD rva_min, rva_max;
+    PIMAGE_SECTION_HEADER cursor = pe->sectionHeaders;
+
+    for (i = 0; 
+            i < pe->ntHeaders->FileHeader.NumberOfSections; 
+            i++, cursor++) {
+        // section rva range
+        rva_min = cursor->VirtualAddress;
+        rva_max = cursor->VirtualAddress + cursor->Misc.VirtualSize - 1;
+        if ((rva_min <= ed_rva && ed_rva <= rva_max) &&
+                (rva_min <= func_rva && func_rva <= rva_max)) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+// }}}
+// {{{ cheap2el_enumerate_export_tables()
+
+void
+cheap2el_enumerate_export_tables(
+        PCHEAP2EL_PE_IMAGE pe,
+        CHEAP2EL_ENUM_EXPORT_CALLBACK cb,
+        LPVOID lpApplicationData
+        )
+{
+    PIMAGE_EXPORT_DIRECTORY ed;
+    CHEAP2EL_EXPORT_ENTRY ee;
+    DWORD *EFT;
+    DWORD *ENT;
+    WORD *EOT;
+    int i, j;
+    DWORD dwOrdinal;
+    ed = cheap2el_get_export_directory(pe);
+    if (NULL == ed) {
+        return;
+    }
+
+    EFT = (DWORD*)(pe->dwActualImageBase + ed->AddressOfFunctions);
+    ENT = (DWORD*)(pe->dwActualImageBase + ed->AddressOfNames);
+    EOT = (WORD*)(pe->dwActualImageBase + ed->AddressOfNameOrdinals);
+    for (i = 0; i < ed->NumberOfFunctions; i++) {
+        ZeroMemory(&ee, sizeof(CHEAP2EL_EXPORT_ENTRY ));
+        ee.order = i;
+        ee.rvaOfFunction = EFT[i];
+        ee.AddressOfFunction = (DWORD)(&(EFT[i]));
+
+        if(_cheap2el_export_is_forwarded(
+                pe, ((DWORD)ed - pe->dwActualImageBase), EFT[i])) {
+            ee.isForwarded = TRUE;
+            ee.ForwardedName = (LPCSTR)(EFT[i] + pe->dwActualImageBase);
+        } else {
+            ee.Function = (LPVOID)(EFT[i] + pe->dwActualImageBase);
+        }
+
+        for (j = 0; j < ed->NumberOfNames; j++) {
+            dwOrdinal = EOT[j];
+            if (i == dwOrdinal) {
+                ee.hint = j;
+                ee.AddressOfName = (DWORD)(&(ENT[j]));
+                ee.AddressOfOrdinal = (DWORD)(&(EOT[j]));
+                ee.rvaOfName = ENT[j];
+                ee.Name = (LPCSTR)(ee.rvaOfName + pe->dwActualImageBase);
+                ee.Ordinal = dwOrdinal + ed->Base;
+                break;
+            }
+        }
+
+        if (cb(pe, ed, &ee, lpApplicationData)) {
+            return;
+        }
+    }
+}
+
+// }}}
+// {{{ cheap2el_get_export_rva_by_name()
+
+static BOOL
+_cheap2el_get_export_rva_by_name_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_EXPORT_DIRECTORY ed,
+        PCHEAP2EL_EXPORT_ENTRY ee,
+        LPVOID lpApplicationData
+        )
+{
+    PCHEAP2EL_GET_EXPORT_RVA_BY_ARG arg = 
+        (PCHEAP2EL_GET_EXPORT_RVA_BY_ARG)lpApplicationData;
+    if (0 != ee->rvaOfName && !ee->isForwarded) {
+        if (!strcmp(ee->Name, arg->By.Name)) {
+            arg->rva = ee->rvaOfFunction;
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+DWORD
+cheap2el_get_export_rva_by_name(PCHEAP2EL_PE_IMAGE pe, LPCSTR name)
+{
+
+    CHEAP2EL_GET_EXPORT_RVA_BY_ARG arg;
+    arg.By.Name = name;
+    arg.rva = 0;
+    cheap2el_enumerate_export_tables(pe,
+            _cheap2el_get_export_rva_by_name_cb,
+            (LPVOID)(&arg)
+            );
+    return arg.rva;
+}
+
+// }}}
+// {{{ cheap2el_get_export_rva_by_ordinal()
+
+static BOOL
+_cheap2el_get_export_rva_by_ordinal_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_EXPORT_DIRECTORY ed,
+        PCHEAP2EL_EXPORT_ENTRY ee,
+        LPVOID lpApplicationData
+        )
+{
+    PCHEAP2EL_GET_EXPORT_RVA_BY_ARG arg = 
+        (PCHEAP2EL_GET_EXPORT_RVA_BY_ARG)lpApplicationData;
+    if (0 != ee->rvaOfName && !ee->isForwarded) {
+        if (ee->Ordinal == arg->By.Ordinal) {
+            arg->rva = ee->rvaOfFunction;
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+DWORD
+cheap2el_get_export_rva_by_ordinal(PCHEAP2EL_PE_IMAGE pe, DWORD ordinal)
+{
+
+    CHEAP2EL_GET_EXPORT_RVA_BY_ARG arg;
+    arg.By.Ordinal = ordinal;
+    arg.rva = 0;
+    cheap2el_enumerate_export_tables(pe,
+            _cheap2el_get_export_rva_by_ordinal_cb,
+            (LPVOID)(&arg)
+            );
+    return arg.rva;
+}
+
+// }}}
+
+
 

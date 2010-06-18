@@ -564,4 +564,378 @@ void test_map_from_loaded_image_success(void)
 }
 
 // }}}
+// {{{ test_get_export_directory_failure()
+
+void test_get_export_directory_failure(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    LPVOID lpFileBuffer = NULL;
+    LPVOID lpMemoryBuffer = NULL;
+    size_t nLen = 0;
+    DWORD sz_image, sz_header;
+    CHEAP2EL_ERROR_CODE err;
+    PIMAGE_EXPORT_DIRECTORY ed = NULL;
+
+    lpFileBuffer = _load_test_data("pe_normal32.dat");
+    if (NULL == lpFileBuffer) {
+        CU_FAIL("memory error");
+        return;
+    }
+    cheap2el_get_sizeofimage_from_file(
+            lpFileBuffer, &sz_image, &sz_header, &err);
+    nLen = sz_image;
+    lpMemoryBuffer = GlobalAlloc(GMEM_ZEROINIT, nLen);
+    pe = cheap2el_map_to_memory(
+            lpFileBuffer, lpMemoryBuffer, nLen, &err);
+    ed = cheap2el_get_export_directory(pe);
+    CU_ASSERT_PTR_NULL(ed);
+
+    GlobalFree(pe);
+    GlobalFree(lpFileBuffer);
+    GlobalFree(lpMemoryBuffer);
+}
+
+// }}}
+// {{{ test_get_export_directory_success()
+
+void test_get_export_directory_success(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    PIMAGE_EXPORT_DIRECTORY ed = NULL;
+    HANDLE hModule = NULL;
+
+    hModule = LoadLibrary("pe_normal32_entry.dll");
+    if (NULL == hModule) {
+        _print_last_error(GetLastError());
+        CU_FAIL("DLL Load error");
+        return;
+    }
+    pe = cheap2el_map_from_loaded_image((LPVOID)hModule, &err);
+    ed = cheap2el_get_export_directory(pe);
+
+    CU_ASSERT_EQUAL(ed->Characteristics, 0x0);
+    CU_ASSERT_EQUAL(ed->Base, 5);
+    CU_ASSERT_EQUAL(ed->NumberOfFunctions, 11);
+    CU_ASSERT_EQUAL(ed->NumberOfNames, 9);
+
+    GlobalFree(pe);
+    FreeLibrary(hModule);
+    return;
+}
+
+// }}}
+// {{{ test_enumerate_export_tables_0()
+
+static BOOL
+_test_enumerate_export_tables_0_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_EXPORT_DIRECTORY ed,
+        PCHEAP2EL_EXPORT_ENTRY ee,
+        LPVOID lpApplicationData
+        )
+{
+    DWORD *p;
+    p = (DWORD*)lpApplicationData;
+    *p = 1;
+    return FALSE;
+}
+
+void test_enumerate_export_tables_0(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    LPVOID lpFileBuffer = NULL;
+    LPVOID lpMemoryBuffer = NULL;
+    size_t nLen = 0;
+    DWORD sz_image, sz_header;
+    CHEAP2EL_ERROR_CODE err;
+    PIMAGE_EXPORT_DIRECTORY ed = NULL;
+    DWORD indicator = 0;
+
+    lpFileBuffer = _load_test_data("pe_normal32.dat");
+    if (NULL == lpFileBuffer) {
+        CU_FAIL("memory error");
+        return;
+    }
+    cheap2el_get_sizeofimage_from_file(
+            lpFileBuffer, &sz_image, &sz_header, &err);
+    nLen = sz_image;
+    lpMemoryBuffer = GlobalAlloc(GMEM_ZEROINIT, nLen);
+    pe = cheap2el_map_to_memory(
+            lpFileBuffer, lpMemoryBuffer, nLen, &err);
+
+    cheap2el_enumerate_export_tables(pe, 
+            _test_enumerate_export_tables_0_cb, (LPVOID)(&indicator));
+
+    CU_ASSERT_FALSE(indicator);
+
+    GlobalFree(pe);
+    GlobalFree(lpFileBuffer);
+    GlobalFree(lpMemoryBuffer);
+}
+
+// }}}
+// {{{ test_enumerate_export_tables()
+
+static BOOL
+_test_enumerate_export_tables_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_EXPORT_DIRECTORY ed,
+        PCHEAP2EL_EXPORT_ENTRY ee,
+        LPVOID lpApplicationData
+        )
+{
+    CHEAP2EL_EXPORT_ENTRY expected[11] = {
+        {0, 3, 0x00001050, 0x00009B7B, 0x10009AF8, 0x10009B30, 0x10009B4E, 
+            (LPVOID)0x10001050, "func2", 0x00000005, 0, NULL},
+        {1, 0, 0x00001060, 0x00000000, 0x10009AFC, 0x00000000, 0x00000000, 
+            (LPVOID)0x10001060, NULL, 0x00000000, 0, NULL},
+        {2, 4, 0x00001070, 0x00009B81, 0x10009B00, 0x10009B34, 0x10009B50, 
+            (LPVOID)0x10001070, "func4", 0x00000007, 0, NULL},
+        {3, 0, 0x00001080, 0x00000000, 0x10009B04, 0x00000000, 0x00000000, 
+            (LPVOID)0x10001080, NULL, 0x00000000, 0, NULL},
+        {4, 0, 0x00001020, 0x00009B6D, 0x10009B08, 0x10009B24, 0x10009B48, 
+            (LPVOID)0x10001020, "bar", 0x00000009, 0, NULL},
+        {5, 1, 0x00001000, 0x00009B71, 0x10009B0C, 0x10009B28, 0x10009B4A, 
+            (LPVOID)0x10001000, "foo", 0x0000000A, 0, NULL},
+        {6, 2, 0x00001040, 0x00009B75, 0x10009B10, 0x10009B2C, 0x10009B4C, 
+            (LPVOID)0x10001040, "func1", 0x0000000B, 0, NULL},
+        {7, 5, 0x00001090, 0x00009B87, 0x10009B14, 0x10009B38, 0x10009B52, 
+            (LPVOID)0x10001090, "funcX", 0x0000000C, 0, NULL},
+        {8, 6, 0x000010A0, 0x00009B8D, 0x10009B18, 0x10009B3C, 0x10009B54, 
+            (LPVOID)0x100010A0, "funcY", 0x0000000D, 0, NULL},
+        {9, 7, 0x0000A000, 0x00009B93, 0x10009B1C, 0x10009B40, 0x10009B56, 
+            (LPVOID)0x1000A000, "varsA", 0x0000000E, 0, NULL},
+        {10, 8, 0x0000A004, 0x00009B99, 0x10009B20, 0x10009B44, 0x10009B58, 
+            (LPVOID)0x1000A004, "varsB", 0x0000000F, 0, NULL}
+    };
+    DWORD *p;
+    int order;
+    p = (DWORD*)lpApplicationData;
+    *p = 1;
+
+    order = ee->order;
+    CU_ASSERT_EQUAL(ee->hint, expected[order].hint);
+    CU_ASSERT_EQUAL(ee->rvaOfFunction, expected[order].rvaOfFunction);
+    CU_ASSERT_EQUAL(ee->rvaOfName, expected[order].rvaOfName);
+    CU_ASSERT_EQUAL(ee->AddressOfFunction, expected[order].AddressOfFunction);
+    CU_ASSERT_EQUAL(ee->AddressOfName, expected[order].AddressOfName);
+    CU_ASSERT_EQUAL(ee->AddressOfOrdinal, expected[order].AddressOfOrdinal);
+    CU_ASSERT_EQUAL(ee->Function, expected[order].Function);
+    if (0 != ee->rvaOfName) {
+        CU_ASSERT_STRING_EQUAL(ee->Name, expected[order].Name);
+    }
+    CU_ASSERT_EQUAL(ee->Ordinal, expected[order].Ordinal);
+
+    /*
+    printf("{%d, %d, "
+            "0x%08X, 0x%08X, "
+            "0x%08X, 0x%08X, 0x%08X, " 
+            "(LPVOID)0x%08X, \"%s\", 0x%08X, 0, NULL},\n", 
+            ee->order, ee->hint, 
+            ee->rvaOfFunction, ee->rvaOfName, 
+            ee->AddressOfFunction, ee->AddressOfName, ee->AddressOfOrdinal, 
+            ee->Function, ee->Name, ee->Ordinal
+            );
+    */
+    return FALSE;
+}
+
+void test_enumerate_export_tables(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    PIMAGE_EXPORT_DIRECTORY ed = NULL;
+    HANDLE hModule = NULL;
+    DWORD indicator = 0;
+
+    hModule = LoadLibrary("pe_normal32_entry.dll");
+    if (NULL == hModule) {
+        _print_last_error(GetLastError());
+        CU_FAIL("DLL Load error");
+        return;
+    }
+
+    pe = cheap2el_map_from_loaded_image((LPVOID)hModule, &err);
+    cheap2el_enumerate_export_tables(pe,
+            _test_enumerate_export_tables_cb,
+            (LPVOID)(&indicator)
+            );
+
+    CU_ASSERT_TRUE(indicator);
+
+    GlobalFree(pe);
+    FreeLibrary(hModule);
+    return;
+}
+
+// }}}
+// {{{ test_enumerate_export_tables_forward()
+
+static BOOL
+_test_enumerate_export_tables_forward_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_EXPORT_DIRECTORY ed,
+        PCHEAP2EL_EXPORT_ENTRY ee,
+        LPVOID lpApplicationData
+        )
+{
+    CHEAP2EL_EXPORT_ENTRY expected[] = {
+        {0, 0, 0x00001000, 0x00009B16, 0x10009AF8, 0x10009B00, 0x10009B08, 
+            (LPVOID)0x10001000, "funcA1", 0x00000001, 0, NULL},
+        {1, 1, 0x00009B24, 0x00009B1D, 0x10009AFC, 0x10009B04, 0x10009B0A, 
+            (LPVOID)0x00000000, "funcB1", 0x00000002, TRUE, "dll02.funcB2"},
+    };
+    DWORD *p;
+    int order;
+    p = (DWORD*)lpApplicationData;
+    *p = 1;
+
+    order = ee->order;
+    CU_ASSERT_EQUAL(ee->hint, expected[order].hint);
+    CU_ASSERT_EQUAL(ee->rvaOfFunction, expected[order].rvaOfFunction);
+    CU_ASSERT_EQUAL(ee->rvaOfName, expected[order].rvaOfName);
+    CU_ASSERT_EQUAL(ee->AddressOfFunction, expected[order].AddressOfFunction);
+    CU_ASSERT_EQUAL(ee->AddressOfName, expected[order].AddressOfName);
+    CU_ASSERT_EQUAL(ee->AddressOfOrdinal, expected[order].AddressOfOrdinal);
+    CU_ASSERT_EQUAL(ee->Function, expected[order].Function);
+    if (0 != ee->rvaOfName) {
+        CU_ASSERT_STRING_EQUAL(ee->Name, expected[order].Name);
+    }
+    CU_ASSERT_EQUAL(ee->Ordinal, expected[order].Ordinal);
+    CU_ASSERT_EQUAL(ee->isForwarded, expected[order].isForwarded);
+    if (ee->isForwarded) {
+        CU_ASSERT_STRING_EQUAL(ee->ForwardedName, expected[order].ForwardedName);
+    }
+    return FALSE;
+}
+
+void test_enumerate_export_tables_forward(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    PIMAGE_EXPORT_DIRECTORY ed = NULL;
+    HANDLE hModule = NULL;
+    DWORD indicator = 0;
+
+    hModule = LoadLibrary("pe_normal32_forward.dll");
+    if (NULL == hModule) {
+        _print_last_error(GetLastError());
+        CU_FAIL("DLL Load error");
+        return;
+    }
+
+    pe = cheap2el_map_from_loaded_image((LPVOID)hModule, &err);
+    cheap2el_enumerate_export_tables(pe,
+            _test_enumerate_export_tables_forward_cb,
+            (LPVOID)(&indicator)
+            );
+
+    CU_ASSERT_TRUE(indicator);
+
+    GlobalFree(pe);
+    FreeLibrary(hModule);
+    return;
+}
+
+// }}}
+// {{{ test_get_export_rva_by_name()
+
+void test_get_export_rva_by_name(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    PIMAGE_EXPORT_DIRECTORY ed = NULL;
+    HANDLE hModule = NULL;
+    DWORD rva;
+
+    hModule = LoadLibrary("pe_normal32_forward.dll");
+    if (NULL == hModule) {
+        _print_last_error(GetLastError());
+        CU_FAIL("DLL Load error");
+        return;
+    }
+
+    pe = cheap2el_map_from_loaded_image((LPVOID)hModule, &err);
+    rva = cheap2el_get_export_rva_by_name(pe, "funcA1");
+    CU_ASSERT_EQUAL(rva, 0x1000);
+    rva = cheap2el_get_export_rva_by_name(pe, "funcB1");
+    CU_ASSERT_EQUAL(rva, 0);
+
+    GlobalFree(pe);
+    FreeLibrary(hModule);
+    return;
+}
+
+// }}}
+// {{{ test_get_export_rva_by_ordinal1()
+
+void test_get_export_rva_by_ordinal1(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    PIMAGE_EXPORT_DIRECTORY ed = NULL;
+    HANDLE hModule = NULL;
+    DWORD rva;
+
+    hModule = LoadLibrary("pe_normal32_forward.dll");
+    if (NULL == hModule) {
+        _print_last_error(GetLastError());
+        CU_FAIL("DLL Load error");
+        return;
+    }
+
+    pe = cheap2el_map_from_loaded_image((LPVOID)hModule, &err);
+    rva = cheap2el_get_export_rva_by_ordinal(pe, 1);
+    CU_ASSERT_EQUAL(rva, 0x1000);
+    rva = cheap2el_get_export_rva_by_ordinal(pe, 2);
+    CU_ASSERT_EQUAL(rva, 0);
+
+    GlobalFree(pe);
+    FreeLibrary(hModule);
+    return;
+}
+
+// }}}
+// {{{ test_get_export_rva_by_ordinal2()
+
+void test_get_export_rva_by_ordinal2(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    HANDLE hModule = NULL;
+    int i;
+
+    struct { int o; DWORD a; } indicators[9] = {
+        { 5, 0x1050},
+        { 7, 0x1070},
+        { 9, 0x1020},
+        {10, 0x1000},
+        {11, 0x1040},
+        {12, 0x1090},
+        {13, 0x10A0},
+        {14, 0xA000},
+        {15, 0xA004}
+    };
+
+    hModule = LoadLibrary("pe_normal32_entry.dll");
+    if (NULL == hModule) {
+        _print_last_error(GetLastError());
+        CU_FAIL("DLL Load error");
+        return;
+    }
+
+    pe = cheap2el_map_from_loaded_image((LPVOID)hModule, &err);
+    for (i = 0; i < 9; i++) {
+        CU_ASSERT_EQUAL(
+                cheap2el_get_export_rva_by_ordinal(pe, indicators[i].o),
+                indicators[i].a);
+    }
+
+    GlobalFree(pe);
+    FreeLibrary(hModule);
+    return;
+}
+
+// }}}
 
