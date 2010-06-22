@@ -938,4 +938,194 @@ void test_get_export_rva_by_ordinal2(void)
 }
 
 // }}}
+// {{{ test_enumerate_import_directory_0()
+
+static BOOL
+_test_enumerate_import_directory_0_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_IMPORT_DESCRIPTOR imp_desc,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    DWORD *p;
+    p = (DWORD*)lpApplicationData;
+    *p = 1;
+    return FALSE;
+}
+
+void test_enumerate_import_directory_0(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    HANDLE hModule = NULL;
+    DWORD indicator = 0;
+    int result = 0;
+
+    hModule = LoadLibrary("pe_normal32_0imps.dll");
+    if (NULL == hModule) {
+        _print_last_error(GetLastError());
+        CU_FAIL("DLL Load error");
+        return;
+    }
+
+    pe = cheap2el_map_from_loaded_image((LPVOID)hModule, &err);
+    result = cheap2el_enumerate_import_directory(pe, 
+            _test_enumerate_import_directory_0_cb, (LPVOID)(&indicator));
+
+    CU_ASSERT_FALSE(result);
+    CU_ASSERT_FALSE(indicator);
+
+    // no callback
+    result = cheap2el_enumerate_import_directory(pe, NULL, (LPVOID)NULL);
+    CU_ASSERT_FALSE(result);
+
+    GlobalFree(pe);
+    FreeLibrary(hModule);
+}
+
+// }}}
+// {{{ test_enumerate_import_directory_1()
+
+static BOOL
+
+_test_enumerate_import_directory_1_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_IMPORT_DESCRIPTOR imp_desc,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    BOOL *r = (BOOL*)lpApplicationData;
+    LPCSTR name = (LPCSTR)(imp_desc->Name + pe->dwActualImageBase);
+
+    CU_ASSERT_EQUAL(order, 0);
+    CU_ASSERT_EQUAL(imp_desc->OriginalFirstThunk, 0x2030);
+    CU_ASSERT_EQUAL(imp_desc->FirstThunk, 0x2000);
+    CU_ASSERT_EQUAL(imp_desc->Name, 0x2040);
+    CU_ASSERT_STRING_EQUAL(name, "KERNEL32.dll");
+
+    return *r;
+}
+
+void test_enumerate_import_directory_1(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    HANDLE hModule = NULL;
+    BOOL cbr;
+    int result = 0;
+
+    hModule = LoadLibrary("pe_normal32_1imps.dll");
+    if (NULL == hModule) {
+        _print_last_error(GetLastError());
+        CU_FAIL("DLL Load error");
+        return;
+    }
+
+    pe = cheap2el_map_from_loaded_image((LPVOID)hModule, &err);
+
+    // callback return false
+    cbr = FALSE;
+    result = cheap2el_enumerate_import_directory(pe, 
+            _test_enumerate_import_directory_1_cb, (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // callback return true
+    cbr = TRUE;
+    result = cheap2el_enumerate_import_directory(pe, 
+            _test_enumerate_import_directory_1_cb, (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // no callback
+    result = cheap2el_enumerate_import_directory(pe, NULL, (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 1);
+
+    GlobalFree(pe);
+    FreeLibrary(hModule);
+}
+
+// }}}
+// {{{ test_enumerate_import_directory_N()
+
+static BOOL
+
+_test_enumerate_import_directory_N_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_IMPORT_DESCRIPTOR imp_desc,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    int *when_return_true  = (int*)lpApplicationData;
+    LPCSTR name = (LPCSTR)(imp_desc->Name + pe->dwActualImageBase);
+    static struct {DWORD oft; DWORD ft; DWORD n; LPCSTR dll;} results[] = {
+        {0x00002084, 0x00002000, 0x000020AC, "KERNEL32.dll"},
+        {0x0000208C, 0x00002008, 0x000020C8, "USER32.dll"},
+        {0x00002094, 0x00002010, 0x000020DC, "pe_normal32_Nimps_stub1.dll"},
+        {0x0000209C, 0x00002018, 0x00002100, "pe_normal32_Nimps_stub2.dll"}
+    };
+
+    if (order == *when_return_true) {
+        return TRUE;
+    }
+
+    CU_ASSERT_EQUAL(imp_desc->OriginalFirstThunk, results[order].oft);
+    CU_ASSERT_EQUAL(imp_desc->FirstThunk, results[order].ft);
+    CU_ASSERT_EQUAL(imp_desc->Name, results[order].n);
+    CU_ASSERT_STRING_EQUAL(name, results[order].dll);
+
+    return FALSE;
+}
+
+void test_enumerate_import_directory_N(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    HANDLE hModule = NULL;
+    int appdata;
+    int result = 0;
+
+    hModule = LoadLibrary("pe_normal32_Nimps.dll");
+    if (NULL == hModule) {
+        _print_last_error(GetLastError());
+        CU_FAIL("DLL Load error");
+        return;
+    }
+
+    pe = cheap2el_map_from_loaded_image((LPVOID)hModule, &err);
+
+    // callback return false
+    appdata = -1;
+    result = cheap2el_enumerate_import_directory(pe, 
+            _test_enumerate_import_directory_N_cb, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 4);
+
+    // callback return true (1st entry)
+    appdata = 0;
+    result = cheap2el_enumerate_import_directory(pe, 
+            _test_enumerate_import_directory_N_cb, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // callback return true (3rd entry)
+    appdata = 2;
+    result = cheap2el_enumerate_import_directory(pe, 
+            _test_enumerate_import_directory_N_cb, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 3);
+
+    // callback return true (4th entry)
+    appdata = 3;
+    result = cheap2el_enumerate_import_directory(pe, 
+            _test_enumerate_import_directory_N_cb, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 4);
+
+    // no callback
+    result = cheap2el_enumerate_import_directory(pe, NULL, (LPVOID)NULL);
+    CU_ASSERT_EQUAL(result, 4);
+
+    GlobalFree(pe);
+    FreeLibrary(hModule);
+}
+
+// }}}
 

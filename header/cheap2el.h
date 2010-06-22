@@ -115,6 +115,26 @@ cheap2el_get_export_rva_by_name(
         LPCSTR name
         );
 
+DWORD
+cheap2el_get_export_rva_by_ordinal(
+        PCHEAP2EL_PE_IMAGE pe, 
+        DWORD ordinal
+        );
+
+typedef BOOL (*CHEAP2EL_ENUM_IMPORT_DIRECTORY_CALLBACK)(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_IMPORT_DESCRIPTOR imp_desc,
+        int order,
+        LPVOID lpApplicationData
+        );
+
+int
+cheap2el_enumerate_import_directory(
+        PCHEAP2EL_PE_IMAGE pe,
+        CHEAP2EL_ENUM_IMPORT_DIRECTORY_CALLBACK cb,
+        LPVOID lpApplicationData
+        );
+
 int
 cheap2el_update_rebase_info(
         PCHEAP2EL_PE_IMAGE pei
