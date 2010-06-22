@@ -400,6 +400,97 @@ cheap2el_enumerate_import_directory(
 }
 
 // }}}
+// {{{ cheap2el_enumerate_import_tables()
+
+static BOOL
+_cheap2el_enumerate_import_tables_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_IMPORT_DESCRIPTOR imp_desc,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    LPCSTR name = (LPCSTR)(imp_desc->Name + pe->dwActualImageBase);
+    PCHEAP2EL_ENUMERATE_IMPORT_TABLES_CB_ARG cbarg = 
+        (PCHEAP2EL_ENUMERATE_IMPORT_TABLES_CB_ARG)lpApplicationData;
+
+    if (!stricmp(name, cbarg->name)) {
+        cbarg->imp_desc = imp_desc;
+        cbarg->name = name;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+int
+cheap2el_enumerate_import_tables(
+        PCHEAP2EL_PE_IMAGE pe,
+        CHEAP2EL_ENUM_IMPORT_TABLES_CALLBACK cb,
+        LPCSTR modulename,
+        LPVOID lpApplicationData
+        )
+{
+    CHEAP2EL_IMPORT_ENTRY ie;
+    PIMAGE_THUNK_DATA IAT = NULL;
+    PIMAGE_THUNK_DATA INT = NULL;
+    PIMAGE_IMPORT_BY_NAME INTE = NULL;
+    int i;
+
+    CHEAP2EL_ENUMERATE_IMPORT_TABLES_CB_ARG cbarg;
+    cbarg.imp_desc = NULL;
+    cbarg.name = modulename;
+
+    if (NULL == modulename) {
+        return 0;
+    }
+
+    cheap2el_enumerate_import_directory(pe, 
+            _cheap2el_enumerate_import_tables_cb, 
+            (LPVOID)(&cbarg)
+            );
+
+    if (NULL == cbarg.imp_desc) {
+        return 0;
+    }
+
+    ie.ModuleName = cbarg.name;
+
+    IAT = (PIMAGE_THUNK_DATA)
+        (cbarg.imp_desc->FirstThunk + pe->dwActualImageBase);
+    if (0 != cbarg.imp_desc->OriginalFirstThunk) {
+        INT = (PIMAGE_THUNK_DATA)
+            (cbarg.imp_desc->OriginalFirstThunk + pe->dwActualImageBase);
+    }
+
+    for (i = 0; 0 != IAT->u1.Function; i++, IAT++) {
+        ie.order = i;
+        ie.rvaOfEntryAddress = (DWORD)IAT - pe->dwActualImageBase;
+        ie.EntryAddress = (LPVOID)(IAT->u1.Function);
+        ie.rvaOfImportByName = 0;
+        ie.ImportByName = NULL;
+        ie.ImportOrdinal = 0;
+        if (0 != cbarg.imp_desc->OriginalFirstThunk) {
+            if (IMAGE_SNAP_BY_ORDINAL(INT->u1.Ordinal)) {
+                // import by order
+                ie.ImportOrdinal = IMAGE_ORDINAL(INT->u1.Ordinal);
+            } else {
+                // import by name
+                ie.rvaOfImportByName = INT->u1.AddressOfData;
+                ie.ImportByName = (PIMAGE_IMPORT_BY_NAME)(INT->u1.AddressOfData + pe->dwActualImageBase);
+            }
+            INT++;
+        }
+
+        if (NULL != cb && cb(pe, cbarg.imp_desc, &ie, lpApplicationData)) {
+            i++;
+            break;
+        }
+    }
+
+    return i;
+}
+
+// }}}
 
 
 

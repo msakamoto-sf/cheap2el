@@ -988,7 +988,6 @@ void test_enumerate_import_directory_0(void)
 // {{{ test_enumerate_import_directory_1()
 
 static BOOL
-
 _test_enumerate_import_directory_1_cb(
         PCHEAP2EL_PE_IMAGE pe,
         PIMAGE_IMPORT_DESCRIPTOR imp_desc,
@@ -1049,7 +1048,6 @@ void test_enumerate_import_directory_1(void)
 // {{{ test_enumerate_import_directory_N()
 
 static BOOL
-
 _test_enumerate_import_directory_N_cb(
         PCHEAP2EL_PE_IMAGE pe,
         PIMAGE_IMPORT_DESCRIPTOR imp_desc,
@@ -1126,6 +1124,293 @@ void test_enumerate_import_directory_N(void)
     GlobalFree(pe);
     FreeLibrary(hModule);
 }
+
+// }}}
+// {{{ test_enumerate_import_tables_0()
+
+static BOOL
+_test_enumerate_import_tables_0_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_IMPORT_DESCRIPTOR imp_desc,
+        PCHEAP2EL_IMPORT_ENTRY imp_entry,
+        LPVOID lpApplicationData
+        )
+{
+    DWORD *p;
+    p = (DWORD*)lpApplicationData;
+    *p = 1;
+    return FALSE;
+}
+
+void test_enumerate_import_tables_0(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    HANDLE hModule = NULL;
+    DWORD indicator = 0;
+    int result = 0;
+
+    hModule = LoadLibrary("pe_normal32_0imps.dll");
+    if (NULL == hModule) {
+        _print_last_error(GetLastError());
+        CU_FAIL("DLL Load error");
+        return;
+    }
+
+    pe = cheap2el_map_from_loaded_image((LPVOID)hModule, &err);
+    result = cheap2el_enumerate_import_tables(pe, 
+            _test_enumerate_import_tables_0_cb, "foo.dll",
+            (LPVOID)(&indicator));
+
+    CU_ASSERT_FALSE(result);
+    CU_ASSERT_FALSE(indicator);
+
+    // no callback
+    result = cheap2el_enumerate_import_tables(pe, NULL, 
+            "foo.dll", (LPVOID)NULL);
+    CU_ASSERT_FALSE(result);
+
+    GlobalFree(pe);
+    FreeLibrary(hModule);
+}
+
+// }}}
+// {{{ test_enumerate_import_tables_1()
+
+static BOOL
+_test_enumerate_import_tables_1_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_IMPORT_DESCRIPTOR imp_desc,
+        PCHEAP2EL_IMPORT_ENTRY imp_entry,
+        LPVOID lpApplicationData
+        )
+{
+    BOOL *r = (BOOL*)lpApplicationData;
+    LPCSTR name = (LPCSTR)(imp_desc->Name + pe->dwActualImageBase);
+
+    CU_ASSERT_STRING_EQUAL(name, "KERNEL32.dll");
+    CU_ASSERT_EQUAL(imp_entry->order, 0);
+    CU_ASSERT_EQUAL(imp_entry->rvaOfEntryAddress, 0x2000);
+    CU_ASSERT_EQUAL(imp_entry->rvaOfImportByName, 0x2038);
+    CU_ASSERT_NOT_EQUAL(imp_entry->EntryAddress, 0);
+    CU_ASSERT_EQUAL(imp_entry->ImportByName->Hint, 1057);
+    CU_ASSERT_EQUAL((DWORD)(imp_entry->ImportByName->Name), 0x1000203A);
+    CU_ASSERT_STRING_EQUAL((LPCSTR)imp_entry->ImportByName->Name, "Sleep");
+    CU_ASSERT_EQUAL(imp_entry->ImportOrdinal, 0);
+    CU_ASSERT_STRING_EQUAL(imp_entry->ModuleName, "KERNEL32.dll");
+
+/*
+    printf("name = %s\n", name);
+    printf("order = %d\n", imp_entry->order);
+    printf("rvaOfEntryAddress = 0x%08X\n", imp_entry->rvaOfEntryAddress);
+    printf("rvaOfImportByName = 0x%08X\n", imp_entry->rvaOfImportByName);
+    printf("EntryAddress = 0x%08X\n", imp_entry->EntryAddress);
+    printf("ImportByName.Hint = %d\n", imp_entry->ImportByName->Hint);
+    printf("ImportByName.Name = 0x%08X\n", imp_entry->ImportByName->Name);
+    printf("ImportByName.Name = %s\n", (LPCSTR)imp_entry->ImportByName->Name);
+    printf("ImportOrdinal = %d\n", imp_entry->ImportOrdinal);
+    printf("ModuleName = %s\n", imp_entry->ModuleName);
+*/
+    return *r;
+}
+
+void test_enumerate_import_tables_1(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    HANDLE hModule = NULL;
+    BOOL cbr;
+    int result = 0;
+
+    hModule = LoadLibrary("pe_normal32_1imps.dll");
+    if (NULL == hModule) {
+        _print_last_error(GetLastError());
+        CU_FAIL("DLL Load error");
+        return;
+    }
+
+    pe = cheap2el_map_from_loaded_image((LPVOID)hModule, &err);
+
+    // dll not found
+    result = cheap2el_enumerate_import_tables(pe, 
+            _test_enumerate_import_tables_1_cb, 
+            "notfound", (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 0);
+
+    // dll not found
+    result = cheap2el_enumerate_import_tables(pe, 
+            _test_enumerate_import_tables_1_cb, 
+            NULL, (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 0);
+
+    // callback return false
+    cbr = FALSE;
+    result = cheap2el_enumerate_import_tables(pe, 
+            _test_enumerate_import_tables_1_cb, 
+            "kernel32.DLL", (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // callback return true
+    cbr = TRUE;
+    result = cheap2el_enumerate_import_tables(pe, 
+            _test_enumerate_import_tables_1_cb, 
+            "KERNEL32.dll", (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // no callback
+    cbr = FALSE;
+    result = cheap2el_enumerate_import_tables(pe, 
+            NULL, "kernel32.DLL", (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 1);
+
+    GlobalFree(pe);
+    FreeLibrary(hModule);
+}
+
+// }}}
+// {{{ test_enumerate_import_tables_M()
+
+static HANDLE hModule_pe_normal32_Mimps;
+static HANDLE hModule_pe_normal32_Mimps_stub;
+
+#define modname ("pe_normal32_Mimps_stub.dll")
+
+static BOOL
+_test_enumerate_import_tables_M_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_IMPORT_DESCRIPTOR imp_desc,
+        PCHEAP2EL_IMPORT_ENTRY imp_entry,
+        LPVOID lpApplicationData
+        )
+{
+    LPCSTR name = (LPCSTR)(imp_desc->Name + pe->dwActualImageBase);
+    int *when_return_true  = (int*)lpApplicationData;
+    int i;
+    static struct {
+        WORD rvaOfEntryAddress;
+        WORD rvaOfImportByName;
+        WORD Hint;
+        WORD rvaOfName;
+        LPCSTR Name;
+        WORD ImportOrdinal;
+        LPCSTR ModuleName;
+    } results[] = {
+        {0x2000, 0x2070, 5, 0x2072, "funcX", 0, modname},
+        {0x2004, 0x0000, 0, 0x0, NULL, 6, modname},
+        {0x2008, 0x0000, 0, 0x0, NULL, 5, modname},
+        {0x200C, 0x2078, 2, 0x207A, "func1", 0, modname},
+        {0x2010, 0x2080, 7, 0x2082, "varsA", 0, modname},
+        {0x2014, 0x2088, 8, 0x208A, "varsB", 0, modname},
+        {0x2018, 0x2090, 0, 0x2092, "bar", 0, modname},
+        {0x201C, 0x2096, 1, 0x2098, "foo", 0, modname}
+    };
+
+    if (imp_entry->order == *when_return_true) {
+        return TRUE;
+    }
+
+    CU_ASSERT_STRING_EQUAL(name, modname);
+    i = imp_entry->order;
+    CU_ASSERT_EQUAL(imp_entry->rvaOfEntryAddress, 
+            results[i].rvaOfEntryAddress);
+    CU_ASSERT_EQUAL(imp_entry->rvaOfImportByName, 
+            results[i].rvaOfImportByName);
+    CU_ASSERT_NOT_EQUAL(imp_entry->EntryAddress, 0);
+    if (0 == imp_entry->rvaOfImportByName) {
+        CU_ASSERT_EQUAL(imp_entry->ImportByName, NULL);
+        CU_ASSERT_EQUAL(imp_entry->ImportOrdinal, results[i].ImportOrdinal);
+    } else {
+        CU_ASSERT_EQUAL(imp_entry->ImportByName->Hint, 
+                results[i].Hint);
+        CU_ASSERT_EQUAL((DWORD)(imp_entry->ImportByName->Name), 
+                results[i].rvaOfName + (DWORD)hModule_pe_normal32_Mimps);
+        CU_ASSERT_STRING_EQUAL((LPCSTR)imp_entry->ImportByName->Name, 
+                results[i].Name);
+        CU_ASSERT_EQUAL(imp_entry->ImportOrdinal, 0);
+    }
+    CU_ASSERT_STRING_EQUAL(imp_entry->ModuleName, modname);
+
+/*
+    printf("{%d, 0x%08X, 0x%08X, ",
+            imp_entry->order,
+            imp_entry->rvaOfEntryAddress,
+            imp_entry->rvaOfImportByName
+          );
+    if (0 != imp_entry->rvaOfImportByName) {
+        printf("%d, 0x%08X, \"%s\", %d, ", 
+                imp_entry->ImportByName->Hint, 
+                imp_entry->ImportByName->Name, 
+                (LPCSTR)imp_entry->ImportByName->Name, 
+                imp_entry->ImportOrdinal
+              );
+    } else {
+        printf("0, 0x0, NULL, %d, ", imp_entry->ImportOrdinal);
+    }
+    printf("\"%s\"}, \n", imp_entry->ModuleName);
+*/
+
+    return FALSE;
+}
+
+void test_enumerate_import_tables_M(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    HANDLE hModule = NULL;
+    int appdata;
+    int result = 0;
+
+    hModule = LoadLibrary("pe_normal32_Mimps.dll");
+    if (NULL == hModule) {
+        _print_last_error(GetLastError());
+        CU_FAIL("DLL Load error");
+        return;
+    }
+
+    pe = cheap2el_map_from_loaded_image((LPVOID)hModule, &err);
+
+    hModule_pe_normal32_Mimps = hModule;
+    hModule_pe_normal32_Mimps_stub = GetModuleHandle("pe_normal32_Mimps_stub.dll");
+
+    // callback return false
+    appdata = -1;
+    result = cheap2el_enumerate_import_tables(pe, 
+            _test_enumerate_import_tables_M_cb, 
+            "pe_normal32_Mimps_stub.dll", (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 8);
+
+    // callback return true (1st entry)
+    appdata = 0;
+    result = cheap2el_enumerate_import_tables(pe, 
+            _test_enumerate_import_tables_M_cb, 
+            "pe_normal32_Mimps_stub.dll", (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // callback return true (3rd entry)
+    appdata = 2;
+    result = cheap2el_enumerate_import_tables(pe, 
+            _test_enumerate_import_tables_M_cb, 
+            "pe_normal32_Mimps_stub.dll", (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 3);
+
+    // callback return true (7th entry)
+    appdata = 7;
+    result = cheap2el_enumerate_import_tables(pe, 
+            _test_enumerate_import_tables_M_cb, 
+            "pe_normal32_Mimps_stub.dll", (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 8);
+
+    // no callback
+    result = cheap2el_enumerate_import_tables(pe, 
+            NULL, "pe_normal32_Mimps_stub.dll", (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 8);
+
+    GlobalFree(pe);
+    FreeLibrary(hModule);
+}
+
+// reset local macro
+#define modname
 
 // }}}
 

@@ -135,6 +135,38 @@ cheap2el_enumerate_import_directory(
         LPVOID lpApplicationData
         );
 
+typedef struct _CHEAP2EL_ENUMERATE_IMPORT_TABLES_CB_ARG {
+        PIMAGE_IMPORT_DESCRIPTOR imp_desc;
+        LPCSTR name;
+} CHEAP2EL_ENUMERATE_IMPORT_TABLES_CB_ARG, 
+    *PCHEAP2EL_ENUMERATE_IMPORT_TABLES_CB_ARG;
+
+typedef struct _CHEAP2EL_IMPORT_ENTRY {
+    int order;
+    DWORD rvaOfEntryAddress;
+    DWORD rvaOfImportByName;
+    LPVOID EntryAddress;
+    PIMAGE_IMPORT_BY_NAME ImportByName;
+    DWORD ImportOrdinal;
+    LPCSTR ModuleName;
+} CHEAP2EL_IMPORT_ENTRY, *PCHEAP2EL_IMPORT_ENTRY;
+
+typedef BOOL (*CHEAP2EL_ENUM_IMPORT_TABLES_CALLBACK)(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_IMPORT_DESCRIPTOR imp_desc,
+        PCHEAP2EL_IMPORT_ENTRY imp_entry,
+        LPVOID lpApplicationData
+        );
+
+int
+cheap2el_enumerate_import_tables(
+        PCHEAP2EL_PE_IMAGE pe,
+        CHEAP2EL_ENUM_IMPORT_TABLES_CALLBACK cb,
+        LPCSTR modulename,
+        LPVOID lpApplicationData
+        );
+
+/*
 int
 cheap2el_update_rebase_info(
         PCHEAP2EL_PE_IMAGE pei
@@ -144,7 +176,7 @@ int
 cheap2el_resolve_iat(
         PCHEAP2EL_PE_IMAGE pei
         );
-
+*/
 
 #ifdef __cplusplus
 }

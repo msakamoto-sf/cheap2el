@@ -40,6 +40,9 @@ extern void test_get_export_rva_by_ordinal2(void);
 extern void test_enumerate_import_directory_0(void);
 extern void test_enumerate_import_directory_1(void);
 extern void test_enumerate_import_directory_N(void);
+extern void test_enumerate_import_tables_0(void);
+extern void test_enumerate_import_tables_1(void);
+extern void test_enumerate_import_tables_M(void);
 
 CU_TestInfo test_array1[] = {
     {"test_get_sizeofimage_from_file", test_get_sizeofimage_from_file},
@@ -57,6 +60,9 @@ CU_TestInfo test_array1[] = {
     {"test_enumerate_import_directory_0", test_enumerate_import_directory_0},
     {"test_enumerate_import_directory_1", test_enumerate_import_directory_1},
     {"test_enumerate_import_directory_N", test_enumerate_import_directory_N},
+    {"test_enumerate_import_tables_0", test_enumerate_import_tables_0},
+    {"test_enumerate_import_tables_1", test_enumerate_import_tables_1},
+    {"test_enumerate_import_tables_M", test_enumerate_import_tables_M},
     CU_TEST_INFO_NULL,
 };
 
