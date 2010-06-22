@@ -369,6 +369,37 @@ cheap2el_get_export_rva_by_ordinal(PCHEAP2EL_PE_IMAGE pe, DWORD ordinal)
 }
 
 // }}}
+// {{{ cheap2el_enumerate_import_directory()
+
+int
+cheap2el_enumerate_import_directory(
+        PCHEAP2EL_PE_IMAGE pe,
+        CHEAP2EL_ENUM_IMPORT_DIRECTORY_CALLBACK cb,
+        LPVOID lpApplicationData
+        )
+{
+    int result = 0;
+    PIMAGE_IMPORT_DESCRIPTOR imp_desc;
+    PIMAGE_DATA_DIRECTORY pdd = NULL;
+    DWORD dwptr = 0;
+
+    pdd = &(pe->ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT]);
+    if (0 == pdd->VirtualAddress) {
+        return 0;
+    }
+
+    dwptr = pe->dwActualImageBase + pdd->VirtualAddress;
+    imp_desc = (PIMAGE_IMPORT_DESCRIPTOR)(dwptr);
+    for (result = 0; 0 != imp_desc->FirstThunk; imp_desc++, result++) {
+        if (NULL != cb && cb(pe, imp_desc, result, lpApplicationData)) {
+            result++;
+            break;
+        }
+    }
+    return result;
+}
+
+// }}}
 
 
 
