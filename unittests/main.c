@@ -50,6 +50,9 @@ extern void test_enumerate_bound_imports_N(void);
 extern void test_enumerate_delay_load_0(void);
 extern void test_enumerate_delay_load_1(void);
 extern void test_enumerate_delay_load_N1(void);
+extern void test_enumerate_delayload_tables_0(void);
+extern void test_enumerate_delayload_tables_N1(void);
+extern void test_enumerate_delayload_tables_NM(void);
 
 CU_TestInfo test_array1[] = {
     {"test_get_sizeofimage_from_file", test_get_sizeofimage_from_file},
@@ -77,6 +80,9 @@ CU_TestInfo test_array1[] = {
     {"test_enumerate_delay_load_0", test_enumerate_delay_load_0},
     {"test_enumerate_delay_load_1", test_enumerate_delay_load_1},
     {"test_enumerate_delay_load_N1", test_enumerate_delay_load_N1},
+    {"test_enumerate_delayload_tables_0", test_enumerate_delayload_tables_0},
+    {"test_enumerate_delayload_tables_N1", test_enumerate_delayload_tables_N1},
+    {"test_enumerate_delayload_tables_NM", test_enumerate_delayload_tables_NM},
     CU_TEST_INFO_NULL,
 };
 
