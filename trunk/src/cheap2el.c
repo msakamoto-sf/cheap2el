@@ -537,6 +537,35 @@ cheap2el_enumerate_bound_imports(
 }
 
 // }}}
+// {{{ cheap2el_enumerate_delay_load()
 
+int
+cheap2el_enumerate_delay_load(
+        PCHEAP2EL_PE_IMAGE pe,
+        CHEAP2EL_ENUM_DELAY_LOAD_CALLBACK cb,
+        LPVOID lpApplicationData
+        )
+{
+    int result = 0;
+    PImgDelayDescr imp_dd;
+    PIMAGE_DATA_DIRECTORY pdd = NULL;
+    DWORD dwptr = 0;
 
+    pdd = &(pe->ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT]);
+    if (0 == pdd->VirtualAddress) {
+        return 0;
+    }
+
+    dwptr = pe->dwActualImageBase + pdd->VirtualAddress;
+    imp_dd = (ImgDelayDescr*)(dwptr);
+    for (result = 0; 0 != imp_dd->rvaHmod; imp_dd++, result++) {
+        if (NULL != cb && cb(pe, imp_dd, result, lpApplicationData)) {
+            result++;
+            break;
+        }
+    }
+    return result;
+}
+
+// }}}
 

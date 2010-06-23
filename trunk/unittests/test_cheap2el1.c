@@ -1706,7 +1706,226 @@ void test_enumerate_bound_imports_N(void)
 }
 
 // }}}
+// {{{ test_enumerate_delay_load_0()
 
+static BOOL
+_test_enumerate_delay_load_0_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        ImgDelayDescr *imp_dd,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    DWORD *p;
+    p = (DWORD*)lpApplicationData;
+    *p = 1;
+    return FALSE;
+}
 
+void test_enumerate_delay_load_0(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    DWORD indicator = 0;
+    int result = 0;
+    lam_arg buffers;
+
+    pe = _load_and_map_test_data(&buffers, "pe_normal32_0imps.dll", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data() failed.");
+        return;
+    }
+
+    result = cheap2el_enumerate_delay_load(pe, 
+            _test_enumerate_delay_load_0_cb, (LPVOID)(&indicator));
+
+    CU_ASSERT_FALSE(result);
+    CU_ASSERT_FALSE(indicator);
+
+    // no callback
+    result = cheap2el_enumerate_delay_load(pe, NULL, (LPVOID)NULL);
+    CU_ASSERT_FALSE(result);
+
+    GlobalFree(pe);
+    GlobalFree(buffers.lpFileBuffer);
+    GlobalFree(buffers.lpMemoryBuffer);
+}
+
+// }}}
+// {{{ test_enumerate_delay_load_1()
+
+static BOOL
+_test_enumerate_delay_load_1_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PImgDelayDescr imp_dd,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    BOOL *r = (BOOL*)lpApplicationData;
+
+    LPCSTR name = (LPCSTR)(imp_dd->rvaDLLName + pe->dwActualImageBase);
+
+    CU_ASSERT_EQUAL(order, 0);
+    CU_ASSERT_EQUAL(imp_dd->rvaDLLName, 0x00002020);
+    CU_ASSERT_STRING_EQUAL(name, "USER32.dll");
+    CU_ASSERT_EQUAL(imp_dd->grAttrs, dlattrRva);
+    CU_ASSERT_EQUAL(imp_dd->rvaHmod, 0x00003010);
+    CU_ASSERT_EQUAL(imp_dd->rvaIAT, 0x00003008);
+    CU_ASSERT_EQUAL(imp_dd->rvaINT, 0x0000206C);
+    CU_ASSERT_EQUAL(imp_dd->rvaBoundIAT, 0x00002084);
+    CU_ASSERT_EQUAL(imp_dd->rvaUnloadIAT, 0x00000000);
+    CU_ASSERT_EQUAL(imp_dd->dwTimeStamp, 0x00000000);
+
+/*
+    printf("rvaDLLName = %s (0x%08X)\n", name, imp_dd->rvaDLLName);
+    printf("grAttrs = 0x%08X\n", imp_dd->grAttrs);
+    printf("rvaHmod = 0x%08X\n", imp_dd->rvaHmod);
+    printf("rvaIAT = 0x%08X", imp_dd->rvaIAT);
+    printf("rvaINT = 0x%08X", imp_dd->rvaINT);
+    printf("rvaBoundIAT = 0x%08X", imp_dd->rvaBoundIAT);
+    printf("rvaUnloadIAT = 0x%08X", imp_dd->rvaUnloadIAT);
+    printf("dwTimeStamp = 0x%08X", imp_dd->dwTimeStamp);
+*/
+
+    return *r;
+}
+
+void test_enumerate_delay_load_1(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    BOOL cbr;
+    int result = 0;
+    lam_arg buffers;
+
+    pe = _load_and_map_test_data(&buffers, "pe_normal32_delay1.dll", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data() failed.");
+        return;
+    }
+
+    // callback return false
+    cbr = FALSE;
+    result = cheap2el_enumerate_delay_load(pe, 
+            _test_enumerate_delay_load_1_cb, (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // callback return true
+    cbr = TRUE;
+    result = cheap2el_enumerate_delay_load(pe, 
+            _test_enumerate_delay_load_1_cb, (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // no callback
+    result = cheap2el_enumerate_delay_load(pe, NULL, (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 1);
+
+    GlobalFree(pe);
+    GlobalFree(buffers.lpFileBuffer);
+    GlobalFree(buffers.lpMemoryBuffer);
+}
+
+// }}}
+// {{{ test_enumerate_delay_load_N1()
+
+static BOOL
+_test_enumerate_delay_load_N1_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PImgDelayDescr imp_dd,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    int *when_return_true  = (int*)lpApplicationData;
+    LPCSTR name = (LPCSTR)(imp_dd->rvaDLLName + pe->dwActualImageBase);
+    static struct {
+        LPCSTR name;
+        DWORD rvaDLLName;
+        DWORD grAttrs;
+        DWORD rvaHmod;
+        DWORD rvaIAT;
+        DWORD rvaINT;
+        DWORD rvaBoundIAT;
+        DWORD rvaUnloadIAT;
+        DWORD dwTimeStamp;
+    } rdd[] = {
+        {"pe_normal32_delayN1_stub1.dll", 0x00002020, 0x00000001, 0x00003010, 0x00003000, 0x000020C0, 0x000020E0, 0x00000000, 0x00000000},
+        {"pe_normal32_delayN1_stub2.dll", 0x00002040, 0x00000001, 0x00003014, 0x00003008, 0x000020C8, 0x000020E8, 0x00000000, 0x00000000}
+    };
+
+    if (order == *when_return_true) {
+        return TRUE;
+    }
+
+    CU_ASSERT_EQUAL(imp_dd->rvaDLLName, rdd[order].rvaDLLName);
+    CU_ASSERT_STRING_EQUAL(name, rdd[order].name);
+    CU_ASSERT_EQUAL(imp_dd->grAttrs, rdd[order].grAttrs);
+    CU_ASSERT_EQUAL(imp_dd->rvaHmod, rdd[order].rvaHmod);
+    CU_ASSERT_EQUAL(imp_dd->rvaIAT, rdd[order].rvaIAT);
+    CU_ASSERT_EQUAL(imp_dd->rvaINT, rdd[order].rvaINT);
+    CU_ASSERT_EQUAL(imp_dd->rvaBoundIAT, rdd[order].rvaBoundIAT);
+    CU_ASSERT_EQUAL(imp_dd->rvaUnloadIAT, rdd[order].rvaUnloadIAT);
+    CU_ASSERT_EQUAL(imp_dd->dwTimeStamp, rdd[order].dwTimeStamp);
+
+/*
+    printf("{\"%s\", 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X},\n", 
+            name,
+            imp_dd->rvaDLLName,
+            imp_dd->grAttrs,
+            imp_dd->rvaHmod,
+            imp_dd->rvaIAT,
+            imp_dd->rvaINT,
+            imp_dd->rvaBoundIAT,
+            imp_dd->rvaUnloadIAT,
+            imp_dd->dwTimeStamp
+          );
+*/
+
+    return FALSE;
+}
+
+void test_enumerate_delay_load_N1(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    int appdata;
+    int result = 0;
+    lam_arg buffers;
+
+    pe = _load_and_map_test_data(&buffers, "pe_normal32_delayN1.dll", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data() failed.");
+        return;
+    }
+
+    // callback return false
+    appdata = -1;
+    result = cheap2el_enumerate_delay_load(pe, 
+            _test_enumerate_delay_load_N1_cb, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 2);
+
+    // callback return true (1st entry)
+    appdata = 0;
+    result = cheap2el_enumerate_delay_load(pe, 
+            _test_enumerate_delay_load_N1_cb, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // callback return true (2nd entry)
+    appdata = 1;
+    result = cheap2el_enumerate_delay_load(pe, 
+            _test_enumerate_delay_load_N1_cb, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 2);
+
+    // no callback
+    result = cheap2el_enumerate_delay_load(pe, NULL, (LPVOID)NULL);
+    CU_ASSERT_EQUAL(result, 2);
+
+    GlobalFree(pe);
+    GlobalFree(buffers.lpFileBuffer);
+    GlobalFree(buffers.lpMemoryBuffer);
+}
+
+// }}}
 
 
