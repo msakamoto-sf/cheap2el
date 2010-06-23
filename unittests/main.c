@@ -30,7 +30,8 @@ extern void test_map_to_memory_success(void);
 extern void test_map_from_loaded_image_failure(void);
 extern void test_map_from_loaded_image_success(void);
 extern void test_get_export_directory_failure(void);
-extern void test_get_export_directory_success(void);
+extern void test_get_export_directory_success1(void);
+extern void test_get_export_directory_success2(void);
 extern void test_enumerate_export_tables_0(void);
 extern void test_enumerate_export_tables(void);
 extern void test_enumerate_export_tables_forward(void);
@@ -43,6 +44,9 @@ extern void test_enumerate_import_directory_N(void);
 extern void test_enumerate_import_tables_0(void);
 extern void test_enumerate_import_tables_1(void);
 extern void test_enumerate_import_tables_M(void);
+extern void test_enumerate_bound_imports_0(void);
+extern void test_enumerate_bound_imports_1(void);
+extern void test_enumerate_bound_imports_N(void);
 
 CU_TestInfo test_array1[] = {
     {"test_get_sizeofimage_from_file", test_get_sizeofimage_from_file},
@@ -51,7 +55,8 @@ CU_TestInfo test_array1[] = {
     {"test_map_from_loaded_image_failure", test_map_from_loaded_image_failure},
     {"test_map_from_loaded_image_success", test_map_from_loaded_image_success},
     {"test_get_export_directory_failure", test_get_export_directory_failure},
-    {"test_get_export_directory_success", test_get_export_directory_success},
+    {"test_get_export_directory_success1", test_get_export_directory_success1},
+    {"test_get_export_directory_success2", test_get_export_directory_success2},
     {"test_enumerate_export_tables_0", test_enumerate_export_tables_0},
     {"test_enumerate_export_tables_forward", test_enumerate_export_tables_forward},
     {"test_get_export_rva_by_name", test_get_export_rva_by_name},
@@ -63,6 +68,9 @@ CU_TestInfo test_array1[] = {
     {"test_enumerate_import_tables_0", test_enumerate_import_tables_0},
     {"test_enumerate_import_tables_1", test_enumerate_import_tables_1},
     {"test_enumerate_import_tables_M", test_enumerate_import_tables_M},
+    {"test_enumerate_bound_imports_0", test_enumerate_bound_imports_0},
+    {"test_enumerate_bound_imports_1", test_enumerate_bound_imports_1},
+    {"test_enumerate_bound_imports_N", test_enumerate_bound_imports_N},
     CU_TEST_INFO_NULL,
 };
 

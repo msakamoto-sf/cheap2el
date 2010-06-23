@@ -166,6 +166,22 @@ cheap2el_enumerate_import_tables(
         LPVOID lpApplicationData
         );
 
+typedef BOOL (*CHEAP2EL_ENUM_BOUND_IMPORTS_CALLBACK)(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_BOUND_IMPORT_DESCRIPTOR bid_head,
+        PIMAGE_BOUND_FORWARDER_REF bfr_head,
+        PIMAGE_BOUND_IMPORT_DESCRIPTOR bid,
+        int order,
+        LPVOID lpApplicationData
+        );
+
+int
+cheap2el_enumerate_bound_imports(
+        PCHEAP2EL_PE_IMAGE pe,
+        CHEAP2EL_ENUM_BOUND_IMPORTS_CALLBACK cb,
+        LPVOID lpApplicationData
+        );
+
 /*
 int
 cheap2el_update_rebase_info(
