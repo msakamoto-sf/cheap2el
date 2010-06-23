@@ -24,6 +24,7 @@
 #define CHEAP2EL_H
 
 #include <windows.h>
+#include <DelayImp.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -181,6 +182,22 @@ cheap2el_enumerate_bound_imports(
         CHEAP2EL_ENUM_BOUND_IMPORTS_CALLBACK cb,
         LPVOID lpApplicationData
         );
+
+typedef BOOL (*CHEAP2EL_ENUM_DELAY_LOAD_CALLBACK)(
+        PCHEAP2EL_PE_IMAGE pe,
+        PImgDelayDescr imp_dd,
+        int order,
+        LPVOID lpApplicationData
+        );
+
+int
+cheap2el_enumerate_delay_load(
+        PCHEAP2EL_PE_IMAGE pe,
+        CHEAP2EL_ENUM_DELAY_LOAD_CALLBACK cb,
+        LPVOID lpApplicationData
+        );
+
+
 
 /*
 int
