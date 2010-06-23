@@ -1927,5 +1927,273 @@ void test_enumerate_delay_load_N1(void)
 }
 
 // }}}
+// {{{ test_enumerate_delayload_tables_0()
 
+static BOOL
+_test_enumerate_delayload_tables_0_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PImgDelayDescr imp_dd,
+        PCHEAP2EL_IMPORT_ENTRY imp_entry,
+        LPVOID lpApplicationData
+        )
+{
+    DWORD *p;
+    p = (DWORD*)lpApplicationData;
+    *p = 1;
+    return FALSE;
+}
+
+void test_enumerate_delayload_tables_0(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    DWORD indicator = 0;
+    int result = 0;
+    lam_arg buffers;
+
+    pe = _load_and_map_test_data(&buffers, "pe_normal32_0imps.dll", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data() failed.");
+        return;
+    }
+
+    result = cheap2el_enumerate_delayload_tables(pe, 
+            _test_enumerate_delayload_tables_0_cb, 
+            "foo.dll", (LPVOID)(&indicator));
+
+    CU_ASSERT_FALSE(result);
+    CU_ASSERT_FALSE(indicator);
+
+    // no callback
+    result = cheap2el_enumerate_delayload_tables(pe, NULL, "foo.dll", (LPVOID)NULL);
+    CU_ASSERT_FALSE(result);
+
+    GlobalFree(pe);
+    GlobalFree(buffers.lpFileBuffer);
+    GlobalFree(buffers.lpMemoryBuffer);
+}
+
+// }}}
+// {{{ test_enumerate_delayload_tables_N1()
+
+static BOOL
+_test_enumerate_delayload_tables_N1_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PImgDelayDescr imp_dd,
+        PCHEAP2EL_IMPORT_ENTRY imp_entry,
+        LPVOID lpApplicationData
+        )
+{
+    LPCSTR name = (LPCSTR)(imp_dd->rvaDLLName + pe->dwActualImageBase);
+    BOOL *r = (BOOL*)lpApplicationData;
+
+    CU_ASSERT_STRING_EQUAL(name, "USER32.dll");
+    CU_ASSERT_EQUAL(imp_entry->order, 0);
+    CU_ASSERT_EQUAL(imp_entry->rvaOfEntryAddress, 0x3008);
+    CU_ASSERT_EQUAL(imp_entry->rvaOfImportByName, 0x2074);
+    CU_ASSERT_EQUAL((DWORD)imp_entry->EntryAddress, 0x10001019);
+    CU_ASSERT_EQUAL(imp_entry->ImportByName->Hint, 0);
+    CU_ASSERT_STRING_EQUAL((LPCSTR)imp_entry->ImportByName->Name, "MessageBoxA");
+    CU_ASSERT_EQUAL(imp_entry->ImportOrdinal, 0);
+    CU_ASSERT_STRING_EQUAL(imp_entry->ModuleName, "USER32.dll");
+
+/*
+    printf("name = %s\n", name);
+    printf("order = %d\n", imp_entry->order);
+    printf("rvaOfEntryAddress = 0x%08X\n", imp_entry->rvaOfEntryAddress);
+    printf("rvaOfImportByName = 0x%08X\n", imp_entry->rvaOfImportByName);
+    printf("EntryAddress = 0x%08X\n", imp_entry->EntryAddress);
+    printf("ImportByName.Hint = %d\n", imp_entry->ImportByName->Hint);
+    printf("ImportByName.Name = 0x%08X\n", imp_entry->ImportByName->Name);
+    printf("ImportByName.Name = %s\n", (LPCSTR)imp_entry->ImportByName->Name);
+    printf("ImportOrdinal = %d\n", imp_entry->ImportOrdinal);
+    printf("ModuleName = %s\n", imp_entry->ModuleName);
+*/
+    return *r;
+}
+
+void test_enumerate_delayload_tables_N1(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    BOOL cbr;
+    int result = 0;
+    lam_arg buffers;
+
+    pe = _load_and_map_test_data(&buffers, "pe_normal32_delay1.dll", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data() failed.");
+        return;
+    }
+
+    // dll not found
+    result = cheap2el_enumerate_delayload_tables(pe, 
+            _test_enumerate_delayload_tables_N1_cb, 
+            "notfound", (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 0);
+
+    // dll not found
+    result = cheap2el_enumerate_delayload_tables(pe, 
+            _test_enumerate_delayload_tables_N1_cb, 
+            NULL, (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 0);
+
+    // callback return false
+    cbr = FALSE;
+    result = cheap2el_enumerate_delayload_tables(pe, 
+            _test_enumerate_delayload_tables_N1_cb, 
+            "user32.DLL", (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // callback return true
+    cbr = TRUE;
+    result = cheap2el_enumerate_delayload_tables(pe, 
+            _test_enumerate_delayload_tables_N1_cb, 
+            "user32.DLL", (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // no callback
+    cbr = FALSE;
+    result = cheap2el_enumerate_delayload_tables(pe, 
+            NULL, "user32.DLL", (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 1);
+
+    GlobalFree(pe);
+    GlobalFree(buffers.lpFileBuffer);
+    GlobalFree(buffers.lpMemoryBuffer);
+}
+
+// }}}
+// {{{ test_enumerate_delayload_tables_NM()
+
+#define modname ("pe_normal32_delayNM_stub.dll")
+
+static BOOL
+_test_enumerate_delayload_tables_NM_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PImgDelayDescr imp_dd,
+        PCHEAP2EL_IMPORT_ENTRY imp_entry,
+        LPVOID lpApplicationData
+        )
+{
+    LPCSTR name = (LPCSTR)(imp_dd->rvaDLLName + pe->dwActualImageBase);
+    int *when_return_true  = (int*)lpApplicationData;
+    int i;
+    static struct {
+        WORD rvaOfEntryAddress;
+        WORD rvaOfImportByName;
+        WORD Hint;
+        LPCSTR Name;
+        WORD ImportOrdinal;
+        LPCSTR ModuleName;
+    } results[] = {
+        {0x3000, 0x0000, 0, NULL, 6, modname},
+        {0x3004, 0x0000, 0, NULL, 5, modname},
+        {0x3008, 0x20A4, 0, "func1", 0, modname},
+        {0x300C, 0x20AC, 0, "bar", 0, modname},
+        {0x3010, 0x20B2, 0, "foo", 0, modname},
+        {0x3014, 0x209C, 0, "funcX", 0, modname}
+    };
+
+    if (imp_entry->order == *when_return_true) {
+        return TRUE;
+    }
+
+    CU_ASSERT_STRING_EQUAL(name, modname);
+    i = imp_entry->order;
+    CU_ASSERT_EQUAL(imp_entry->rvaOfEntryAddress, 
+            results[i].rvaOfEntryAddress);
+    CU_ASSERT_EQUAL(imp_entry->rvaOfImportByName, 
+            results[i].rvaOfImportByName);
+    CU_ASSERT_NOT_EQUAL(imp_entry->EntryAddress, 0);
+    if (0 == imp_entry->rvaOfImportByName) {
+        CU_ASSERT_EQUAL(imp_entry->ImportByName, NULL);
+        CU_ASSERT_EQUAL(imp_entry->ImportOrdinal, results[i].ImportOrdinal);
+    } else {
+        CU_ASSERT_EQUAL(imp_entry->ImportByName->Hint, 
+                results[i].Hint);
+        CU_ASSERT_STRING_EQUAL((LPCSTR)imp_entry->ImportByName->Name, 
+                results[i].Name);
+        CU_ASSERT_EQUAL(imp_entry->ImportOrdinal, 0);
+    }
+    CU_ASSERT_STRING_EQUAL(imp_entry->ModuleName, modname);
+
+/*
+    printf("{%d, 0x%08X, 0x%08X, ",
+            imp_entry->order,
+            imp_entry->rvaOfEntryAddress,
+            imp_entry->rvaOfImportByName
+          );
+    if (0 != imp_entry->rvaOfImportByName) {
+        printf("%d, 0x%08X, \"%s\", %d, ", 
+                imp_entry->ImportByName->Hint, 
+                imp_entry->ImportByName->Name, 
+                (LPCSTR)imp_entry->ImportByName->Name, 
+                imp_entry->ImportOrdinal
+              );
+    } else {
+        printf("0, 0x0, NULL, %d, ", imp_entry->ImportOrdinal);
+    }
+    printf("\"%s\"}, \n", imp_entry->ModuleName);
+*/
+
+    return FALSE;
+}
+
+void test_enumerate_delayload_tables_NM(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    int appdata;
+    int result = 0;
+    lam_arg buffers;
+
+    pe = _load_and_map_test_data(&buffers, "pe_normal32_delayNM.dll", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data() failed.");
+        return;
+    }
+
+    // callback return false
+    appdata = -1;
+    result = cheap2el_enumerate_delayload_tables(pe, 
+            _test_enumerate_delayload_tables_NM_cb, 
+            "pe_normal32_delayNM_stub.dll", (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 6);
+
+    // callback return true (1st entry)
+    appdata = 0;
+    result = cheap2el_enumerate_delayload_tables(pe, 
+            _test_enumerate_delayload_tables_NM_cb, 
+            "pe_normal32_delayNM_stub.dll", (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // callback return true (3rd entry)
+    appdata = 2;
+    result = cheap2el_enumerate_delayload_tables(pe, 
+            _test_enumerate_delayload_tables_NM_cb, 
+            "pe_normal32_delayNM_stub.dll", (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 3);
+
+    // callback return true (6th entry)
+    appdata = 5;
+    result = cheap2el_enumerate_delayload_tables(pe, 
+            _test_enumerate_delayload_tables_NM_cb, 
+            "pe_normal32_delayNM_stub.dll", (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 6);
+
+    // no callback
+    result = cheap2el_enumerate_delayload_tables(pe, 
+            NULL, "pe_normal32_delayNM_stub.dll", (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 6);
+
+    GlobalFree(pe);
+    GlobalFree(buffers.lpFileBuffer);
+    GlobalFree(buffers.lpMemoryBuffer);
+}
+
+// reset local macro
+#undef modname
+
+// }}}
 

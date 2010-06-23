@@ -197,6 +197,27 @@ cheap2el_enumerate_delay_load(
         LPVOID lpApplicationData
         );
 
+typedef struct _CHEAP2EL_ENUMERATE_DELAYLOAD_TABLES_CB_ARG {
+        PImgDelayDescr imp_dd;
+        LPCSTR name;
+} CHEAP2EL_ENUMERATE_DELAYLOAD_TABLES_CB_ARG, 
+    *PCHEAP2EL_ENUMERATE_DELAYLOAD_TABLES_CB_ARG;
+
+typedef BOOL (*CHEAP2EL_ENUM_DELAYLOAD_TABLES_CALLBACK)(
+        PCHEAP2EL_PE_IMAGE pe,
+        PImgDelayDescr imp_dd,
+        PCHEAP2EL_IMPORT_ENTRY imp_entry,
+        LPVOID lpApplicationData
+        );
+
+int
+cheap2el_enumerate_delayload_tables(
+        PCHEAP2EL_PE_IMAGE pe,
+        CHEAP2EL_ENUM_DELAYLOAD_TABLES_CALLBACK cb,
+        LPCSTR modulename,
+        LPVOID lpApplicationData
+        );
+
 
 
 /*
