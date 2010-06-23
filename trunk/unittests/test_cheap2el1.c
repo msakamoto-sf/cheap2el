@@ -97,6 +97,39 @@ _load_test_data(LPCTSTR lpFileName)
 }
 
 // }}}
+// {{{ _load_and_map_test_data()
+
+typedef struct _lam_arg {
+    LPVOID lpFileBuffer;
+    LPVOID lpMemoryBuffer;
+} lam_arg, *plam_arg;
+
+PCHEAP2EL_PE_IMAGE
+_load_and_map_test_data(
+        plam_arg arg, LPCSTR lpFileName, CHEAP2EL_ERROR_CODE *err)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    size_t nLen = 0;
+    DWORD sz_image, sz_header;
+
+    arg->lpFileBuffer = _load_test_data(lpFileName);
+    if (NULL == arg->lpFileBuffer) {
+        CU_FAIL("memory error");
+        return NULL;
+    }
+
+    cheap2el_get_sizeofimage_from_file(
+            arg->lpFileBuffer, &sz_image, &sz_header, err);
+    nLen = sz_image;
+    arg->lpMemoryBuffer = GlobalAlloc(GMEM_ZEROINIT, nLen);
+
+    pe = cheap2el_map_to_memory(
+            arg->lpFileBuffer, arg->lpMemoryBuffer, nLen, err);
+
+    return pe;
+}
+
+// }}}
 // {{{ test_get_sizeofimage_from_file()
 
 void test_get_sizeofimage_from_file(void)
@@ -569,36 +602,28 @@ void test_map_from_loaded_image_success(void)
 void test_get_export_directory_failure(void)
 {
     PCHEAP2EL_PE_IMAGE pe = NULL;
-    LPVOID lpFileBuffer = NULL;
-    LPVOID lpMemoryBuffer = NULL;
-    size_t nLen = 0;
-    DWORD sz_image, sz_header;
     CHEAP2EL_ERROR_CODE err;
     PIMAGE_EXPORT_DIRECTORY ed = NULL;
+    lam_arg buffers;
 
-    lpFileBuffer = _load_test_data("pe_normal32.dat");
-    if (NULL == lpFileBuffer) {
-        CU_FAIL("memory error");
+    pe = _load_and_map_test_data(&buffers, "pe_normal32.dat", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data() failed.");
         return;
     }
-    cheap2el_get_sizeofimage_from_file(
-            lpFileBuffer, &sz_image, &sz_header, &err);
-    nLen = sz_image;
-    lpMemoryBuffer = GlobalAlloc(GMEM_ZEROINIT, nLen);
-    pe = cheap2el_map_to_memory(
-            lpFileBuffer, lpMemoryBuffer, nLen, &err);
+
     ed = cheap2el_get_export_directory(pe);
     CU_ASSERT_PTR_NULL(ed);
 
     GlobalFree(pe);
-    GlobalFree(lpFileBuffer);
-    GlobalFree(lpMemoryBuffer);
+    GlobalFree(buffers.lpFileBuffer);
+    GlobalFree(buffers.lpMemoryBuffer);
 }
 
 // }}}
-// {{{ test_get_export_directory_success()
+// {{{ test_get_export_directory_success1()
 
-void test_get_export_directory_success(void)
+void test_get_export_directory_success1(void)
 {
     PCHEAP2EL_PE_IMAGE pe = NULL;
     CHEAP2EL_ERROR_CODE err;
@@ -625,6 +650,34 @@ void test_get_export_directory_success(void)
 }
 
 // }}}
+// {{{ test_get_export_directory_success2()
+
+void test_get_export_directory_success2(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    PIMAGE_EXPORT_DIRECTORY ed = NULL;
+    lam_arg buffers;
+
+    pe = _load_and_map_test_data(&buffers, "pe_normal32_entry.dll", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data() failed.");
+        return;
+    }
+    ed = cheap2el_get_export_directory(pe);
+
+    CU_ASSERT_EQUAL(ed->Characteristics, 0x0);
+    CU_ASSERT_EQUAL(ed->Base, 5);
+    CU_ASSERT_EQUAL(ed->NumberOfFunctions, 11);
+    CU_ASSERT_EQUAL(ed->NumberOfNames, 9);
+
+    GlobalFree(pe);
+    GlobalFree(buffers.lpFileBuffer);
+    GlobalFree(buffers.lpMemoryBuffer);
+    return;
+}
+
+// }}}
 // {{{ test_enumerate_export_tables_0()
 
 static BOOL
@@ -644,34 +697,24 @@ _test_enumerate_export_tables_0_cb(
 void test_enumerate_export_tables_0(void)
 {
     PCHEAP2EL_PE_IMAGE pe = NULL;
-    LPVOID lpFileBuffer = NULL;
-    LPVOID lpMemoryBuffer = NULL;
-    size_t nLen = 0;
-    DWORD sz_image, sz_header;
     CHEAP2EL_ERROR_CODE err;
     PIMAGE_EXPORT_DIRECTORY ed = NULL;
     DWORD indicator = 0;
+    lam_arg buffers;
 
-    lpFileBuffer = _load_test_data("pe_normal32.dat");
-    if (NULL == lpFileBuffer) {
-        CU_FAIL("memory error");
+    pe = _load_and_map_test_data(&buffers, "pe_normal32.dat", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data() failed.");
         return;
     }
-    cheap2el_get_sizeofimage_from_file(
-            lpFileBuffer, &sz_image, &sz_header, &err);
-    nLen = sz_image;
-    lpMemoryBuffer = GlobalAlloc(GMEM_ZEROINIT, nLen);
-    pe = cheap2el_map_to_memory(
-            lpFileBuffer, lpMemoryBuffer, nLen, &err);
-
     cheap2el_enumerate_export_tables(pe, 
             _test_enumerate_export_tables_0_cb, (LPVOID)(&indicator));
 
     CU_ASSERT_FALSE(indicator);
 
     GlobalFree(pe);
-    GlobalFree(lpFileBuffer);
-    GlobalFree(lpMemoryBuffer);
+    GlobalFree(buffers.lpFileBuffer);
+    GlobalFree(buffers.lpMemoryBuffer);
 }
 
 // }}}
@@ -1410,7 +1453,260 @@ void test_enumerate_import_tables_M(void)
 }
 
 // reset local macro
-#define modname
+#undef modname
 
 // }}}
+// {{{ test_enumerate_bound_imports_0()
+
+static BOOL
+_test_enumerate_bound_imports_0_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_BOUND_IMPORT_DESCRIPTOR bid_head,
+        PIMAGE_BOUND_FORWARDER_REF bfr_head,
+        PIMAGE_BOUND_IMPORT_DESCRIPTOR bid,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    DWORD *p;
+    p = (DWORD*)lpApplicationData;
+    *p = 1;
+    return FALSE;
+}
+
+void test_enumerate_bound_imports_0(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    DWORD indicator = 0;
+    int result = 0;
+    lam_arg buffers;
+
+    pe = _load_and_map_test_data(&buffers, "pe_normal32_0imps.dll", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data() failed.");
+        return;
+    }
+
+    result = cheap2el_enumerate_bound_imports(pe, 
+            _test_enumerate_bound_imports_0_cb, (LPVOID)(&indicator));
+
+    CU_ASSERT_FALSE(result);
+    CU_ASSERT_FALSE(indicator);
+
+    // no callback
+    result = cheap2el_enumerate_bound_imports(pe, NULL, (LPVOID)NULL);
+    CU_ASSERT_FALSE(result);
+
+    GlobalFree(pe);
+    GlobalFree(buffers.lpFileBuffer);
+    GlobalFree(buffers.lpMemoryBuffer);
+}
+
+// }}}
+// {{{ test_enumerate_bound_imports_1()
+
+static BOOL
+_test_enumerate_bound_imports_1_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_BOUND_IMPORT_DESCRIPTOR bid_head,
+        PIMAGE_BOUND_FORWARDER_REF bfr_head,
+        PIMAGE_BOUND_IMPORT_DESCRIPTOR bid,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    BOOL *r = (BOOL*)lpApplicationData;
+    LPCSTR name = (LPCSTR)((DWORD)(bid_head) + bid->OffsetModuleName);
+    CU_ASSERT_NOT_EQUAL(bid->TimeDateStamp, 0);
+    CU_ASSERT_EQUAL(bid->OffsetModuleName, 0x10);
+    CU_ASSERT_EQUAL(bid->NumberOfModuleForwarderRefs, 0);
+    CU_ASSERT_PTR_NULL(bfr_head);
+/*
+    printf("TimeDateStamp = 0x%08X\n", bid->TimeDateStamp);
+    printf("OffsetModuleName = 0x%08X\n", bid->OffsetModuleName);
+    printf("OffsetModuleName = %s\n", name);
+    printf("NumberOfModuleForwarderRefs = 0x%08X\n", bid->NumberOfModuleForwarderRefs);
+    */
+    return *r;
+}
+
+void test_enumerate_bound_imports_1(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    BOOL cbr;
+    int result = 0;
+    lam_arg buffers;
+
+    pe = _load_and_map_test_data(&buffers, "pe_normal32_1binds.dll", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data() failed.");
+        return;
+    }
+
+    // callback return false
+    cbr = FALSE;
+    result = cheap2el_enumerate_bound_imports(pe, 
+            _test_enumerate_bound_imports_1_cb, (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // callback return true
+    cbr = TRUE;
+    result = cheap2el_enumerate_bound_imports(pe, 
+            _test_enumerate_bound_imports_1_cb, (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // no callback
+    cbr = FALSE;
+    result = cheap2el_enumerate_bound_imports(pe, NULL, (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 1);
+
+    GlobalFree(pe);
+    GlobalFree(buffers.lpFileBuffer);
+    GlobalFree(buffers.lpMemoryBuffer);
+}
+
+// }}}
+// {{{ test_enumerate_bound_imports_N()
+/*
+static HANDLE hModule_pe_normal32_Mimps;
+static HANDLE hModule_pe_normal32_Mimps_stub;
+
+#define modname ("pe_normal32_Mimps_stub.dll")
+*/
+static BOOL
+_test_enumerate_bound_imports_N_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_BOUND_IMPORT_DESCRIPTOR bid_head,
+        PIMAGE_BOUND_FORWARDER_REF bfr_head,
+        PIMAGE_BOUND_IMPORT_DESCRIPTOR bid,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    LPCSTR name = NULL;
+    PIMAGE_BOUND_FORWARDER_REF bfr;
+    int *when_return_true  = (int*)lpApplicationData;
+    int i;
+    static struct { WORD OMN; WORD NOMFR; LPCSTR name; } rbid[] = {
+        {0x0060, 0x0000, "pe_normal32_Nbinds_stubA0.dll"},
+        {0x007E, 0x0001, "pe_normal32_Nbinds_stubB0.dll"},
+        {0x00BA, 0x0002, "pe_normal32_Nbinds_stubC0.dll"},
+        {0x0114, 0x0003, "pe_normal32_Nbinds_stubD0.dll"},
+        {0x018C, 0x0000, "pe_normal32_Nbinds_stubE0.dll"}
+    };
+    static struct { WORD OMN; LPCSTR name; } rbfr[5][3] = {
+        // A0
+        { {0, NULL}, {0, NULL}, {0, NULL} },
+        // B0
+        { {0x009C, "pe_normal32_Nbinds_stubB1.DLL"}, {0, NULL}, {0, NULL} },
+        // C0
+        {
+            {0x00D8, "pe_normal32_Nbinds_stubC2.DLL"},
+            {0x00F6, "pe_normal32_Nbinds_stubC1.DLL"},
+            {0, NULL}
+        },
+        // D0
+        {
+            {0x0132, "pe_normal32_Nbinds_stubD2.DLL"},
+            {0x0150, "pe_normal32_Nbinds_stubD1.DLL"},
+            {0x016E, "pe_normal32_Nbinds_stubD3.DLL"}
+        },
+        // E0
+        { {0, NULL}, {0, NULL}, {0, NULL} }
+    };
+
+    if (order == *when_return_true) {
+        return TRUE;
+    }
+
+    name = (LPCSTR)((DWORD)(bid_head) + bid->OffsetModuleName);
+    CU_ASSERT_NOT_EQUAL(bid->TimeDateStamp, 0);
+    CU_ASSERT_EQUAL(bid->OffsetModuleName, rbid[order].OMN);
+    CU_ASSERT_EQUAL(bid->NumberOfModuleForwarderRefs, rbid[order].NOMFR);
+    CU_ASSERT_STRING_EQUAL(name, rbid[order].name);
+    if (0 == rbid[order].NOMFR) {
+        CU_ASSERT_PTR_NULL(bfr_head);
+    } else {
+        for (i = 0, bfr = bfr_head; 
+            i < rbid[order].NOMFR; 
+            i++, bfr++) {
+            CU_ASSERT_NOT_EQUAL(bfr->TimeDateStamp, 0);
+            CU_ASSERT_EQUAL(bfr->OffsetModuleName, rbfr[order][i].OMN);
+            name = (LPCSTR)((DWORD)(bid_head) + bfr->OffsetModuleName);
+            CU_ASSERT_STRING_EQUAL(name, rbfr[order][i].name);
+        }
+    }
+/*
+    name = (LPCSTR)((DWORD)(bid_head) + bid->OffsetModuleName);
+    printf("{0x%04X, 0x%04X, \"%s\"},\n", 
+            bid->OffsetModuleName,
+            bid->NumberOfModuleForwarderRefs,
+            name
+            );
+    for (i = 0, bfr = bfr_head; 
+            i < bid->NumberOfModuleForwarderRefs; 
+            i++, bfr++) {
+        name = (LPCSTR)((DWORD)(bid_head) + bfr->OffsetModuleName);
+        printf("\t{0x%04X, \"%s\"},\n", 
+                bfr->OffsetModuleName,
+                name
+              );
+    }
+*/
+    return FALSE;
+}
+
+void test_enumerate_bound_imports_N(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    int appdata;
+    int result = 0;
+    lam_arg buffers;
+
+    pe = _load_and_map_test_data(&buffers, "pe_normal32_Nbinds.dll", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data() failed.");
+        return;
+    }
+
+    // callback return false
+    appdata = -1;
+    result = cheap2el_enumerate_bound_imports(pe, 
+            _test_enumerate_bound_imports_N_cb, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 5);
+
+    // callback return true (1st entry)
+    appdata = 0;
+    result = cheap2el_enumerate_bound_imports(pe, 
+            _test_enumerate_bound_imports_N_cb, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // callback return true (3rd entry)
+    appdata = 2;
+    result = cheap2el_enumerate_bound_imports(pe, 
+            _test_enumerate_bound_imports_N_cb, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 3);
+
+    // callback return true (5th entry)
+    appdata = 4;
+    result = cheap2el_enumerate_bound_imports(pe, 
+            _test_enumerate_bound_imports_N_cb, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 5);
+
+    // no callback
+    result = cheap2el_enumerate_bound_imports(pe, NULL, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 5);
+
+    GlobalFree(pe);
+    GlobalFree(buffers.lpFileBuffer);
+    GlobalFree(buffers.lpMemoryBuffer);
+}
+
+// }}}
+
+
+
 

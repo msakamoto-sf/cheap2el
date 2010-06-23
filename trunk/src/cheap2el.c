@@ -491,6 +491,52 @@ cheap2el_enumerate_import_tables(
 }
 
 // }}}
+// {{{ cheap2el_enumerate_bound_imports()
+
+int
+cheap2el_enumerate_bound_imports(
+        PCHEAP2EL_PE_IMAGE pe,
+        CHEAP2EL_ENUM_BOUND_IMPORTS_CALLBACK cb,
+        LPVOID lpApplicationData
+        )
+{
+    int result = 0;
+    PIMAGE_DATA_DIRECTORY pdd = NULL;
+    PIMAGE_BOUND_IMPORT_DESCRIPTOR bid;
+    PIMAGE_BOUND_IMPORT_DESCRIPTOR bid_head;
+    PIMAGE_BOUND_FORWARDER_REF bfr_head;
+    DWORD dwptr = 0;
+
+    pdd = &(pe->ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT]);
+    if (0 == pdd->VirtualAddress) {
+        return 0;
+    }
+
+    dwptr = pe->dwActualImageBase + pdd->VirtualAddress;
+    bid = (PIMAGE_BOUND_IMPORT_DESCRIPTOR)(dwptr);
+    bid_head = bid;
+    for (result = 0; 0 != bid->TimeDateStamp; bid++, result++) {
+        bfr_head = NULL;
+        if (0 < bid->NumberOfModuleForwarderRefs) {
+            dwptr = (DWORD)bid + sizeof(IMAGE_BOUND_IMPORT_DESCRIPTOR);
+            bfr_head = (PIMAGE_BOUND_FORWARDER_REF)(dwptr);
+        }
+        if (NULL != cb && 
+                cb(pe, bid_head, bfr_head, bid, result, lpApplicationData)) {
+            result++;
+            break;
+        }
+        if (0 < bid->NumberOfModuleForwarderRefs) {
+            dwptr = (DWORD)bid;
+            dwptr += sizeof(IMAGE_BOUND_IMPORT_DESCRIPTOR);
+            dwptr += (bid->NumberOfModuleForwarderRefs - 1) * sizeof(IMAGE_BOUND_FORWARDER_REF);
+            bid = (PIMAGE_BOUND_IMPORT_DESCRIPTOR)(dwptr);
+        }
+    }
+    return result;
+}
+
+// }}}
 
 
 
