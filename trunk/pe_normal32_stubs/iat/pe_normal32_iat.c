@@ -20,6 +20,9 @@
  * $Id$
  */
 
+#include <windows.h>
+#include "resource.h"
+
 __declspec(dllimport) int varsA;
 __declspec(dllimport) int varsB;
 __declspec(dllimport) int funcA1(int a);
@@ -34,4 +37,21 @@ int __declspec(dllexport) func1(int a, int b)
 int __declspec(dllexport) func2(int a, int b)
 {
 	return funcB1(a) + funcB2(b) + varsB;
+}
+
+HINSTANCE hDll;
+
+BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpRserved)
+{
+	switch (dwReason) {
+		case DLL_PROCESS_ATTACH:
+			hDll = (HINSTANCE)hModule;
+	}
+	return TRUE;
+}
+
+int __declspec(dllexport) MyLoadString(UINT id, LPTSTR lpBuffer, int nBufferLen)
+{
+	SetLastError(0);
+	return LoadString(hDll, id, lpBuffer, nBufferLen);
 }

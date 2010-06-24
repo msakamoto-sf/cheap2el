@@ -2614,7 +2614,7 @@ _test_callback_resolve_imports_cbA(
         LPVOID lpApplicationData
         )
 {
-    static DWORD expected[] = {0x80000002, 0x00002084, 0x0000207C};
+    static DWORD expected[] = {0x000020C4, 0x000020CC, 0x80000002};
     BOOL bConfirm = *(BOOL*)lpApplicationData;
     int i = imp_entry->order;
     if (bConfirm) {
@@ -2639,7 +2639,7 @@ _test_callback_resolve_imports_cbB(
         LPVOID lpApplicationData
         )
 {
-    static DWORD expected[] = {0x80000002, 0x000020B0, 0x000020A8};
+    static DWORD expected[] = {0x80000002, 0x000020F0, 0x000020F8};
     BOOL bConfirm = *(BOOL*)lpApplicationData;
     int i = imp_entry->order;
     if (bConfirm) {
@@ -2692,7 +2692,7 @@ void test_callback_resolve_imports(void)
     CU_ASSERT_EQUAL(appdata.dwLastError, 0);
     CU_ASSERT_EQUAL(appdata.lpErrInfo, NULL);
     CU_ASSERT_EQUAL(appdata.err, 0);
-    CU_ASSERT_EQUAL(result, 2);
+    CU_ASSERT_EQUAL(result, 4);
 
     // confirm updated iat addresses
     bConfirm = TRUE;
@@ -2722,6 +2722,10 @@ void test_pseudo_load(void)
     lam_arg2 buffers;
     DWORD dwptr;
     int (*pfunc)(int, int);
+    BOOL (APIENTRY *dllMain)(HANDLE, DWORD, LPVOID);
+    int (*pfunc2)(UINT, LPTSTR, int);
+    char str_res_buf[1024];
+    int str_res_buf_sz = sizeof(str_res_buf)/sizeof(str_res_buf[0]);
 
     pe = _load_and_map_test_data2(
             NULL, &buffers, "pe_normal32_iat.dll", &err);
@@ -2738,6 +2742,15 @@ void test_pseudo_load(void)
     CU_ASSERT_EQUAL(arg.lpErrInfo, NULL);
     CU_ASSERT_EQUAL(arg.err, 0);
 
+    // manually call DllMain()
+    dwptr = pe->ntHeaders->OptionalHeader.AddressOfEntryPoint + 
+        pe->dwActualImageBase;
+    dllMain = (BOOL (APIENTRY*)(HANDLE, DWORD, LPVOID))(dwptr);
+    CU_ASSERT_TRUE(dllMain(
+                (HANDLE)pe->dwActualImageBase, 
+                DLL_PROCESS_ATTACH, 
+                (LPVOID)NULL));
+
     dwptr = cheap2el_get_export_rva_by_name(pe, "func1") + pe->dwActualImageBase;
     pfunc = (int (*)(int, int))(dwptr);
     CU_ASSERT_EQUAL(pfunc(1, 2), 106);
@@ -2745,6 +2758,11 @@ void test_pseudo_load(void)
     dwptr = cheap2el_get_export_rva_by_name(pe, "func2") + pe->dwActualImageBase;
     pfunc = (int (*)(int, int))(dwptr);
     CU_ASSERT_EQUAL(pfunc(1, 2), 210);
+
+    dwptr = cheap2el_get_export_rva_by_name(pe, "MyLoadString") + pe->dwActualImageBase;
+    pfunc2 = (int (*)(UINT, LPTSTR, int))(dwptr);
+    CU_ASSERT_TRUE(pfunc2(40000, str_res_buf, str_res_buf_sz));
+    CU_ASSERT_STRING_EQUAL(str_res_buf, "English Text.");
 
     GlobalFree(pe);
     if (!VirtualFree(buffers.lpVirtualPage, 0, MEM_RELEASE)) {
