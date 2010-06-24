@@ -130,6 +130,44 @@ _load_and_map_test_data(
 }
 
 // }}}
+// {{{ _load_and_map_test_data2()
+
+typedef struct _lam_arg2 {
+    LPVOID lpFileBuffer;
+    LPVOID lpVirtualPage;
+} lam_arg2, *plam_arg2;
+
+PCHEAP2EL_PE_IMAGE
+_load_and_map_test_data2(LPVOID addr, plam_arg2 arg, LPCSTR lpFileName, CHEAP2EL_ERROR_CODE *err)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    size_t nLen = 0;
+    DWORD sz_image, sz_header;
+
+    arg->lpFileBuffer = _load_test_data(lpFileName);
+    if (NULL == arg->lpFileBuffer) {
+        CU_FAIL("memory error");
+        return NULL;
+    }
+
+    cheap2el_get_sizeofimage_from_file(
+            arg->lpFileBuffer, &sz_image, &sz_header, err);
+    nLen = sz_image;
+    arg->lpVirtualPage = VirtualAlloc(
+            addr, nLen, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    if (NULL == arg->lpVirtualPage) {
+        _print_last_error(GetLastError());
+        CU_FAIL("VirtualAlloc() error");
+        return NULL;
+    }
+
+    pe = cheap2el_map_to_memory(
+            arg->lpFileBuffer, arg->lpVirtualPage, nLen, err);
+
+    return pe;
+}
+
+// }}}
 // {{{ test_get_sizeofimage_from_file()
 
 void test_get_sizeofimage_from_file(void)
@@ -2406,6 +2444,158 @@ void test_enumerate_base_relocations_N(void)
     GlobalFree(pe);
     GlobalFree(buffers.lpFileBuffer);
     GlobalFree(buffers.lpMemoryBuffer);
+}
+
+// }}}
+// {{{ test_callback_update_base_relocations1()
+
+static BOOL
+_test_callback_update_base_relocations_cb1(
+        PCHEAP2EL_PE_IMAGE pe,
+        PCHEAP2EL_BASERELOC_ENTRY bre,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    PWORD tofs = NULL;
+    DWORD dwbuf;
+    PDWORD dwptr;
+    WORD wbuf, br_type, br_offset;
+    int i;
+    // effective addresses
+    static DWORD ea[2][4] = {
+        {0x05002000, 0x05003004, 0x05003008, 0x05002008},
+        {0x05001000, 0, 0, 0}
+    };
+
+    tofs = bre->TypeOffset;
+    for (i = 0; i < bre->NumberOfTypeOffset; i++, tofs++) {
+        wbuf = *tofs;
+        br_type = (0xF000 & wbuf) >> 12;
+        br_offset = 0xFF & wbuf;
+        if (IMAGE_REL_BASED_HIGHLOW != br_type) {
+            continue;
+        }
+        dwbuf = pe->dwActualImageBase + bre->BaseRelocation->VirtualAddress + br_offset;
+        dwptr = (PDWORD)dwbuf;
+        dwbuf = *dwptr;
+        /*
+        printf("[%d][%d] = actual:0x%08X/expected:0x%08X\n", 
+                order, i, dwbuf, ea[order][i]);
+        */
+        CU_ASSERT_EQUAL(dwbuf, ea[order][i]);
+    }
+
+    return FALSE;
+}
+
+void test_callback_update_base_relocations1(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    int appdata;
+    int result = 0;
+    lam_arg2 buffers;
+
+    pe = _load_and_map_test_data2(
+            (LPVOID)0x05000000, &buffers, "pe_normal32_relocN.dll", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data2() failed.");
+        return;
+    }
+
+    // update base relocations
+    result = cheap2el_enumerate_base_relocations(pe, 
+            cheap2el_callback_update_base_relocations, (LPVOID)NULL);
+    CU_ASSERT_EQUAL(result, 2);
+
+    // confirm updated addresses
+    result = cheap2el_enumerate_base_relocations(pe, 
+            _test_callback_update_base_relocations_cb1, (LPVOID)NULL);
+    CU_ASSERT_EQUAL(result, 2);
+
+    GlobalFree(pe);
+    if (!VirtualFree(buffers.lpVirtualPage, 0, MEM_RELEASE)) {
+        _print_last_error(GetLastError());
+        CU_FAIL("VirtualFree() error");
+    }
+    GlobalFree(buffers.lpFileBuffer);
+}
+
+// }}}
+// {{{ test_callback_update_base_relocations2()
+
+static BOOL
+_test_callback_update_base_relocations_cb2(
+        PCHEAP2EL_PE_IMAGE pe,
+        PCHEAP2EL_BASERELOC_ENTRY bre,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    PWORD tofs = NULL;
+    DWORD dwbuf;
+    PDWORD dwptr;
+    WORD wbuf, br_type, br_offset;
+    int i;
+    // effective addresses
+    static DWORD ea[2][4] = {
+        {0x20002000, 0x20003004, 0x20003008, 0x20002008},
+        {0x20001000, 0, 0, 0}
+    };
+
+    tofs = bre->TypeOffset;
+    for (i = 0; i < bre->NumberOfTypeOffset; i++, tofs++) {
+        wbuf = *tofs;
+        br_type = (0xF000 & wbuf) >> 12;
+        br_offset = 0xFF & wbuf;
+        if (IMAGE_REL_BASED_HIGHLOW != br_type) {
+            continue;
+        }
+        dwbuf = pe->dwActualImageBase + bre->BaseRelocation->VirtualAddress + br_offset;
+        dwptr = (PDWORD)dwbuf;
+        dwbuf = *dwptr;
+        /*
+        printf("[%d][%d] = actual:0x%08X/expected:0x%08X\n", 
+                order, i, dwbuf, ea[order][i]);
+        */
+        CU_ASSERT_EQUAL(dwbuf, ea[order][i]);
+    }
+
+    return FALSE;
+}
+
+void test_callback_update_base_relocations2(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    int appdata;
+    int result = 0;
+    lam_arg2 buffers;
+
+    pe = _load_and_map_test_data2(
+            (LPVOID)0x20000000, &buffers, "pe_normal32_relocN.dll", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data2() failed.");
+        return;
+    }
+
+    // update base relocations
+    result = cheap2el_enumerate_base_relocations(pe, 
+            cheap2el_callback_update_base_relocations, (LPVOID)NULL);
+    CU_ASSERT_EQUAL(result, 2);
+
+    // confirm updated addresses
+    result = cheap2el_enumerate_base_relocations(pe, 
+            _test_callback_update_base_relocations_cb2, (LPVOID)NULL);
+    CU_ASSERT_EQUAL(result, 2);
+
+    GlobalFree(pe);
+    if (!VirtualFree(buffers.lpVirtualPage, 0, MEM_RELEASE)) {
+        _print_last_error(GetLastError());
+        CU_FAIL("VirtualFree() error");
+    }
+    GlobalFree(buffers.lpFileBuffer);
 }
 
 // }}}
