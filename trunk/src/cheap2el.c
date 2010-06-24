@@ -752,5 +752,79 @@ cheap2el_callback_update_base_relocations(
 }
 
 // }}}
+// {{{ cheap2el_callback_resolve_imports()
 
+static BOOL
+_cheap2el_callback_resolve_IAT(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_IMPORT_DESCRIPTOR imp_desc,
+        PCHEAP2EL_IMPORT_ENTRY imp_entry,
+        LPVOID lpApplicationData
+        )
+{
+    PCHEAP2EL_CALLBACK_RESOLVE_IMPORTS_ARG arg = 
+        (PCHEAP2EL_CALLBACK_RESOLVE_IMPORTS_ARG)lpApplicationData;
+    int i;
+
+    PDWORD dwptr;
+    DWORD dwbuf;
+
+    // effective symbol address
+    LPVOID esa = NULL;
+    if (0 == imp_entry->rvaOfImportByName) {
+        // import by ordinal
+        esa = GetProcAddress(
+                arg->hModule, 
+                MAKEINTRESOURCEA(imp_entry->ImportOrdinal)
+                );
+    } else {
+        // import by name
+        esa = GetProcAddress(
+                arg->hModule, 
+                imp_entry->ImportByName->Name
+                );
+    }
+    if (NULL == esa) {
+        arg->dwLastError = GetLastError();
+        arg->lpErrInfo = (LPVOID)imp_entry;
+        arg->err = CHEAP2EL_EC_GET_PROCADDRESS_FAILURE;
+        // stop
+        return TRUE;
+    }
+    dwptr = (PDWORD)(imp_entry->rvaOfEntryAddress + pe->dwActualImageBase);
+    *dwptr = (DWORD)esa;
+
+    return FALSE;
+}
+
+BOOL
+cheap2el_callback_resolve_imports(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_IMPORT_DESCRIPTOR imp_desc,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    LPCSTR modulename = (LPCSTR)(imp_desc->Name + pe->dwActualImageBase);
+    PCHEAP2EL_CALLBACK_RESOLVE_IMPORTS_ARG arg = 
+        (PCHEAP2EL_CALLBACK_RESOLVE_IMPORTS_ARG)lpApplicationData;
+
+    arg->hModule = LoadLibraryA(modulename);
+    if (NULL == arg->hModule) {
+        arg->dwLastError = GetLastError();
+        arg->lpErrInfo = (LPVOID)modulename;
+        arg->err = CHEAP2EL_EC_LOAD_LIBRARY_FAILURE;
+        return TRUE;
+    }
+
+    cheap2el_enumerate_import_tables(pe, 
+            _cheap2el_callback_resolve_IAT, modulename, lpApplicationData);
+    if (CHEAP2EL_EC_NONE != arg->err) {
+        // stop
+        return TRUE;
+    }
+    return FALSE;
+}
+
+// }}}
 
