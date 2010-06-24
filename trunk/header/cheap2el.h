@@ -218,7 +218,25 @@ cheap2el_enumerate_delayload_tables(
         LPVOID lpApplicationData
         );
 
+typedef struct _CHEAP2EL_BASERELOC_ENTRY {
+    PIMAGE_BASE_RELOCATION BaseRelocation;
+    PWORD TypeOffset;
+    int NumberOfTypeOffset;
+} CHEAP2EL_BASERELOC_ENTRY, *PCHEAP2EL_BASERELOC_ENTRY;
 
+typedef BOOL (*CHEAP2EL_ENUM_BASE_RELOCATIONS_CALLBACK)(
+        PCHEAP2EL_PE_IMAGE pe,
+        PCHEAP2EL_BASERELOC_ENTRY bre,
+        int order,
+        LPVOID lpApplicationData
+        );
+
+int
+cheap2el_enumerate_base_relocations(
+        PCHEAP2EL_PE_IMAGE pe,
+        CHEAP2EL_ENUM_BASE_RELOCATIONS_CALLBACK cb,
+        LPVOID lpApplicationData
+        );
 
 /*
 int

@@ -660,3 +660,47 @@ cheap2el_enumerate_delayload_tables(
 
 // }}}
 
+// {{{ cheap2el_enumerate_base_relocations()
+
+int
+cheap2el_enumerate_base_relocations(
+        PCHEAP2EL_PE_IMAGE pe,
+        CHEAP2EL_ENUM_BASE_RELOCATIONS_CALLBACK cb,
+        LPVOID lpApplicationData
+        )
+{
+    int result = 0;
+    PIMAGE_DATA_DIRECTORY pdd = NULL;
+    PIMAGE_BASE_RELOCATION br;
+    CHEAP2EL_BASERELOC_ENTRY bre;
+    DWORD br_head, br_tail;
+    DWORD dwptr = 0;
+    size_t sz_br = sizeof(IMAGE_BASE_RELOCATION);
+    size_t sz_to = sizeof(WORD); // TypeOffset
+
+    pdd = &(pe->ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC]);
+    if (0 == pdd->VirtualAddress) {
+        return 0;
+    }
+    br_head = pe->dwActualImageBase + pdd->VirtualAddress;
+    br_tail = br_head + pdd->Size;
+    br = (PIMAGE_BASE_RELOCATION)(br_head);
+    dwptr = br_head;
+    for (result = 0; dwptr < br_tail; result++) {
+        br = (PIMAGE_BASE_RELOCATION)(dwptr);
+        bre.BaseRelocation = br;
+        bre.TypeOffset = (PWORD)((DWORD)br + sz_br);
+        // calculate number of TypeOffsets
+        bre.NumberOfTypeOffset = (br->SizeOfBlock - sz_br) / sz_to;
+        if (NULL != cb && 
+                cb(pe, &bre, result, lpApplicationData)) {
+            result++;
+            break;
+        }
+        dwptr += br->SizeOfBlock;
+    }
+    return result;
+}
+
+// }}}
+
