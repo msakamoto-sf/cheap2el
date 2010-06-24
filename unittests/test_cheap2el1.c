@@ -2196,4 +2196,217 @@ void test_enumerate_delayload_tables_NM(void)
 #undef modname
 
 // }}}
+// {{{ test_enumerate_base_relocations_0()
+
+static BOOL
+_test_enumerate_base_relocations_0_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PCHEAP2EL_BASERELOC_ENTRY bre,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    DWORD *p;
+    p = (DWORD*)lpApplicationData;
+    *p = 1;
+    return FALSE;
+}
+
+void test_enumerate_base_relocations_0(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    DWORD indicator = 0;
+    int result = 0;
+    lam_arg buffers;
+
+    pe = _load_and_map_test_data(&buffers, "pe_normal32_0imps.dll", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data() failed.");
+        return;
+    }
+
+    result = cheap2el_enumerate_base_relocations(pe, 
+            _test_enumerate_base_relocations_0_cb, (LPVOID)(&indicator));
+
+    CU_ASSERT_FALSE(result);
+    CU_ASSERT_FALSE(indicator);
+
+    // no callback
+    result = cheap2el_enumerate_base_relocations(pe, NULL, (LPVOID)NULL);
+    CU_ASSERT_FALSE(result);
+
+    GlobalFree(pe);
+    GlobalFree(buffers.lpFileBuffer);
+    GlobalFree(buffers.lpMemoryBuffer);
+}
+
+// }}}
+// {{{ test_enumerate_base_relocations_1()
+
+static BOOL
+_test_enumerate_base_relocations_1_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PCHEAP2EL_BASERELOC_ENTRY bre,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    BOOL *r = (BOOL*)lpApplicationData;
+    PWORD tofs = NULL;
+    DWORD dwptr;
+    int i;
+
+    CU_ASSERT_EQUAL(bre->BaseRelocation->VirtualAddress, 0x1000);
+    CU_ASSERT_EQUAL(bre->BaseRelocation->SizeOfBlock, 0xC);
+    dwptr = (DWORD)bre->BaseRelocation;
+    dwptr += sizeof(IMAGE_BASE_RELOCATION);
+    CU_ASSERT_EQUAL(bre->TypeOffset, (PWORD)dwptr);
+    CU_ASSERT_EQUAL(bre->NumberOfTypeOffset, 0x2);
+    tofs = bre->TypeOffset;
+    CU_ASSERT_EQUAL(tofs[0], 0x3009);
+    CU_ASSERT_EQUAL(tofs[1], 0x0);
+
+/*
+    printf("PIMAGE_BASE_RELOCATION = 0x%08X\n", bre->BaseRelocation);
+    printf("VirtualAddress = 0x%08X\n", bre->BaseRelocation->VirtualAddress);
+    printf("SizeOfBlock = 0x%08X\n", bre->BaseRelocation->SizeOfBlock);
+    printf("TypeOffset = 0x%08X\n", bre->TypeOffset);
+    printf("NumberOfTypeOffset = 0x%08X\n", bre->NumberOfTypeOffset);
+    tofs = bre->TypeOffset;
+    for (i = 0; i < bre->NumberOfTypeOffset; i++, tofs++) {
+        printf("\tTypeOffset[%d] = 0x%04X\n", i, *tofs);
+    }
+*/
+
+    return *r;
+}
+
+void test_enumerate_base_relocations_1(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    BOOL cbr;
+    int result = 0;
+    lam_arg buffers;
+
+    pe = _load_and_map_test_data(&buffers, "pe_normal32_reloc1.dll", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data() failed.");
+        return;
+    }
+
+    // callback return false
+    cbr = FALSE;
+    result = cheap2el_enumerate_base_relocations(pe, 
+            _test_enumerate_base_relocations_1_cb, (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // callback return true
+    cbr = TRUE;
+    result = cheap2el_enumerate_base_relocations(pe, 
+            _test_enumerate_base_relocations_1_cb, (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // no callback
+    result = cheap2el_enumerate_base_relocations(pe, NULL, (LPVOID)(&cbr));
+    CU_ASSERT_EQUAL(result, 1);
+
+    GlobalFree(pe);
+    GlobalFree(buffers.lpFileBuffer);
+    GlobalFree(buffers.lpMemoryBuffer);
+}
+
+// }}}
+// {{{ test_enumerate_base_relocations_N()
+
+static BOOL
+_test_enumerate_base_relocations_N_cb(
+        PCHEAP2EL_PE_IMAGE pe,
+        PCHEAP2EL_BASERELOC_ENTRY bre,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    int *when_return_true  = (int*)lpApplicationData;
+    PWORD tofs = NULL;
+    DWORD dwptr;
+    int i;
+    static struct { DWORD va; DWORD sob; int num; } rbre[] = {
+        {0x00001000, 0x00000010, 4},
+        {0x00003000, 0x0000000C, 2},
+    };
+    static WORD rtofs[2][4] = {
+        {0x3019, 0x3026, 0x302B, 0x3033},
+        {0x3000, 0x0000, 0, 0}
+    };
+    if (order == *when_return_true) {
+        return TRUE;
+    }
+    CU_ASSERT_EQUAL(bre->BaseRelocation->VirtualAddress, rbre[order].va);
+    CU_ASSERT_EQUAL(bre->BaseRelocation->SizeOfBlock, rbre[order].sob);
+    CU_ASSERT_EQUAL(bre->NumberOfTypeOffset, rbre[order].num);
+    dwptr = (DWORD)bre->BaseRelocation;
+    dwptr += sizeof(IMAGE_BASE_RELOCATION);
+    CU_ASSERT_EQUAL(bre->TypeOffset, (PWORD)dwptr);
+    tofs = bre->TypeOffset;
+    for (i = 0; i < bre->NumberOfTypeOffset; i++, tofs++) {
+        CU_ASSERT_EQUAL(*tofs, rtofs[order][i]);
+    }
+
+/*
+    printf("{0x%08X, 0x%08X, %d},\n",
+            bre->BaseRelocation->VirtualAddress,
+            bre->BaseRelocation->SizeOfBlock,
+            bre->NumberOfTypeOffset);
+    tofs = bre->TypeOffset;
+    for (i = 0; i < bre->NumberOfTypeOffset; i++, tofs++) {
+        printf("\t{%d, 0x%04X},\n", i, *tofs);
+    }
+*/
+    return FALSE;
+}
+
+void test_enumerate_base_relocations_N(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    int appdata;
+    int result = 0;
+    lam_arg buffers;
+
+    pe = _load_and_map_test_data(&buffers, "pe_normal32_relocN.dll", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data() failed.");
+        return;
+    }
+
+    // callback return false
+    appdata = -1;
+    result = cheap2el_enumerate_base_relocations(pe, 
+            _test_enumerate_base_relocations_N_cb, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 2);
+
+    // callback return true (1st entry)
+    appdata = 0;
+    result = cheap2el_enumerate_base_relocations(pe, 
+            _test_enumerate_base_relocations_N_cb, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // callback return true (2nd entry)
+    appdata = 1;
+    result = cheap2el_enumerate_base_relocations(pe, 
+            _test_enumerate_base_relocations_N_cb, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 2);
+
+    // no callback
+    result = cheap2el_enumerate_base_relocations(pe, NULL, (LPVOID)NULL);
+    CU_ASSERT_EQUAL(result, 2);
+
+    GlobalFree(pe);
+    GlobalFree(buffers.lpFileBuffer);
+    GlobalFree(buffers.lpMemoryBuffer);
+}
+
+// }}}
 
