@@ -2706,4 +2706,47 @@ void test_callback_resolve_imports(void)
 }
 
 // }}}
+// {{{ test_pseudo_load()
+
+void test_pseudo_load(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    CHEAP2EL_CALLBACK_RESOLVE_IMPORTS_ARG arg;
+    lam_arg2 buffers;
+    DWORD dwptr;
+    int (*pfunc)(int, int);
+
+    pe = _load_and_map_test_data2(
+            NULL, &buffers, "pe_normal32_iat.dll", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data2() failed.");
+        return;
+    }
+
+    CU_ASSERT_TRUE(cheap2el_pseudo_load_address_resolver(pe, &arg));
+    if (0 != arg.dwLastError) {
+        _print_last_error(arg.dwLastError);
+    }
+    CU_ASSERT_EQUAL(arg.dwLastError, 0);
+    CU_ASSERT_EQUAL(arg.lpErrInfo, NULL);
+    CU_ASSERT_EQUAL(arg.err, 0);
+
+    dwptr = cheap2el_get_export_rva_by_name(pe, "func1") + pe->dwActualImageBase;
+    pfunc = (int (*)(int, int))(dwptr);
+    CU_ASSERT_EQUAL(pfunc(1, 2), 106);
+
+    dwptr = cheap2el_get_export_rva_by_name(pe, "func2") + pe->dwActualImageBase;
+    pfunc = (int (*)(int, int))(dwptr);
+    CU_ASSERT_EQUAL(pfunc(1, 2), 210);
+
+    GlobalFree(pe);
+    if (!VirtualFree(buffers.lpVirtualPage, 0, MEM_RELEASE)) {
+        _print_last_error(GetLastError());
+        CU_FAIL("VirtualFree() error");
+    }
+    GlobalFree(buffers.lpFileBuffer);
+}
+
+// }}}
 

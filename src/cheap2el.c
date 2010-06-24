@@ -827,4 +827,32 @@ cheap2el_callback_resolve_imports(
 }
 
 // }}}
+// {{{ cheap2el_pseudo_load_address_resolver()
+
+BOOL
+cheap2el_pseudo_load_address_resolver(
+    PCHEAP2EL_PE_IMAGE pe,
+    PCHEAP2EL_CALLBACK_RESOLVE_IMPORTS_ARG arg
+    )
+{
+    arg->hModule = NULL;
+    arg->dwLastError = 0;
+    arg->lpErrInfo = NULL;
+    arg->err = CHEAP2EL_EC_NONE;
+
+    // update base relocations
+    cheap2el_enumerate_base_relocations(pe, 
+            cheap2el_callback_update_base_relocations, (LPVOID)NULL);
+
+    // update base relocations
+    cheap2el_enumerate_import_directory(pe, 
+            cheap2el_callback_resolve_imports, (LPVOID)(arg));
+
+    if (0 != arg->dwLastError) {
+        return FALSE;
+    }
+    return TRUE;
+}
+
+// }}}
 
