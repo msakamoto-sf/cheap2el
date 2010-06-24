@@ -659,7 +659,6 @@ cheap2el_enumerate_delayload_tables(
 }
 
 // }}}
-
 // {{{ cheap2el_enumerate_base_relocations()
 
 int
@@ -703,4 +702,55 @@ cheap2el_enumerate_base_relocations(
 }
 
 // }}}
+// {{{ cheap2el_callback_update_base_relocations()
+
+BOOL
+cheap2el_callback_update_base_relocations(
+        PCHEAP2EL_PE_IMAGE pe,
+        PCHEAP2EL_BASERELOC_ENTRY bre,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    DWORD dwbuf, diff;
+    DWORD *dwptr;
+    WORD wbuf, br_type, br_offset;
+    int i;
+    PWORD tofs = bre->TypeOffset;
+    BOOL isActualUpper = pe->dwActualImageBase > pe->ntHeaders->OptionalHeader.ImageBase;
+
+    // DWORD = "unsigned" long adjustment
+    if (isActualUpper) {
+        diff = pe->dwActualImageBase - pe->ntHeaders->OptionalHeader.ImageBase;
+    } else {
+        diff = pe->ntHeaders->OptionalHeader.ImageBase - pe->dwActualImageBase;
+    }
+    for (i = 0; i < bre->NumberOfTypeOffset; i++, tofs++) {
+        wbuf = *tofs;
+        // upper 4bit
+        br_type = (0xF000 & wbuf) >> 12;
+        br_offset = 0xFF & wbuf;
+        switch (br_type) {
+            case IMAGE_REL_BASED_HIGHLOW:
+                break;
+            case IMAGE_REL_BASED_ABSOLUTE:
+            default:
+                continue;
+        }
+        dwbuf = pe->dwActualImageBase + bre->BaseRelocation->VirtualAddress + br_offset;
+        dwptr = (DWORD*)dwbuf;
+        dwbuf = *dwptr;
+        if (isActualUpper) {
+            dwbuf += diff;
+        } else {
+            dwbuf -= diff;
+        }
+        *dwptr = dwbuf;
+    }
+
+    return FALSE;
+}
+
+// }}}
+
 

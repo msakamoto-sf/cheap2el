@@ -238,12 +238,16 @@ cheap2el_enumerate_base_relocations(
         LPVOID lpApplicationData
         );
 
-/*
-int
-cheap2el_update_rebase_info(
-        PCHEAP2EL_PE_IMAGE pei
+BOOL
+cheap2el_callback_update_base_relocations(
+        PCHEAP2EL_PE_IMAGE pe,
+        PCHEAP2EL_BASERELOC_ENTRY bre,
+        int order,
+        LPVOID lpApplicationData
         );
 
+
+/*
 int
 cheap2el_resolve_iat(
         PCHEAP2EL_PE_IMAGE pei
