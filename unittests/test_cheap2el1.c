@@ -2493,7 +2493,6 @@ void test_callback_update_base_relocations1(void)
 {
     PCHEAP2EL_PE_IMAGE pe = NULL;
     CHEAP2EL_ERROR_CODE err;
-    int appdata;
     int result = 0;
     lam_arg2 buffers;
 
@@ -2569,7 +2568,6 @@ void test_callback_update_base_relocations2(void)
 {
     PCHEAP2EL_PE_IMAGE pe = NULL;
     CHEAP2EL_ERROR_CODE err;
-    int appdata;
     int result = 0;
     lam_arg2 buffers;
 
@@ -2589,6 +2587,115 @@ void test_callback_update_base_relocations2(void)
     result = cheap2el_enumerate_base_relocations(pe, 
             _test_callback_update_base_relocations_cb2, (LPVOID)NULL);
     CU_ASSERT_EQUAL(result, 2);
+
+    GlobalFree(pe);
+    if (!VirtualFree(buffers.lpVirtualPage, 0, MEM_RELEASE)) {
+        _print_last_error(GetLastError());
+        CU_FAIL("VirtualFree() error");
+    }
+    GlobalFree(buffers.lpFileBuffer);
+}
+
+// }}}
+// {{{ test_callback_resolve_imports()
+
+// {{{ _test_callback_resolve_imports_cbA()
+static BOOL
+_test_callback_resolve_imports_cbA(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_IMPORT_DESCRIPTOR imp_desc,
+        PCHEAP2EL_IMPORT_ENTRY imp_entry,
+        LPVOID lpApplicationData
+        )
+{
+    static DWORD expected[] = {0x80000002, 0x00002084, 0x0000207C};
+    BOOL bConfirm = *(BOOL*)lpApplicationData;
+    int i = imp_entry->order;
+    if (bConfirm) {
+        CU_ASSERT_NOT_EQUAL((DWORD)(imp_entry->EntryAddress), expected[i]);
+    } else {
+        CU_ASSERT_EQUAL((DWORD)(imp_entry->EntryAddress), expected[i]);
+    }
+    //printf("EntryAddress = 0x%08X\n", imp_entry->EntryAddress);
+
+    return FALSE;
+}
+
+// }}}
+
+// {{{ _test_callback_resolve_imports_cbB()
+
+static BOOL
+_test_callback_resolve_imports_cbB(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_IMPORT_DESCRIPTOR imp_desc,
+        PCHEAP2EL_IMPORT_ENTRY imp_entry,
+        LPVOID lpApplicationData
+        )
+{
+    static DWORD expected[] = {0x80000002, 0x000020B0, 0x000020A8};
+    BOOL bConfirm = *(BOOL*)lpApplicationData;
+    int i = imp_entry->order;
+    if (bConfirm) {
+        CU_ASSERT_NOT_EQUAL((DWORD)(imp_entry->EntryAddress), expected[i]);
+    } else {
+        CU_ASSERT_EQUAL((DWORD)(imp_entry->EntryAddress), expected[i]);
+    }
+    //printf("EntryAddress = 0x%08X\n", imp_entry->EntryAddress);
+
+    return FALSE;
+}
+
+// }}}
+
+void test_callback_resolve_imports(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    CHEAP2EL_CALLBACK_RESOLVE_IMPORTS_ARG appdata;
+    int result = 0;
+    BOOL bConfirm = FALSE;
+    lam_arg2 buffers;
+
+    pe = _load_and_map_test_data2(
+            NULL, &buffers, "pe_normal32_iat.dll", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data2() failed.");
+        return;
+    }
+
+    appdata.hModule = NULL;
+    appdata.dwLastError = 0;
+    appdata.lpErrInfo = NULL;
+    appdata.err = CHEAP2EL_EC_NONE;
+
+    // confirm original iat addresses
+    cheap2el_enumerate_import_tables(pe, 
+            _test_callback_resolve_imports_cbA, 
+            "pe_normal32_iat_stubA.dll", (LPVOID)(&bConfirm));
+    cheap2el_enumerate_import_tables(pe, 
+            _test_callback_resolve_imports_cbB, 
+            "pe_normal32_iat_stubB.dll", (LPVOID)(&bConfirm));
+
+    // update base relocations
+    result = cheap2el_enumerate_import_directory(pe, 
+            cheap2el_callback_resolve_imports, (LPVOID)(&appdata));
+    if (0 != appdata.dwLastError) {
+        _print_last_error(appdata.dwLastError);
+    }
+    CU_ASSERT_EQUAL(appdata.dwLastError, 0);
+    CU_ASSERT_EQUAL(appdata.lpErrInfo, NULL);
+    CU_ASSERT_EQUAL(appdata.err, 0);
+    CU_ASSERT_EQUAL(result, 2);
+
+    // confirm updated iat addresses
+    bConfirm = TRUE;
+    cheap2el_enumerate_import_tables(pe, 
+            _test_callback_resolve_imports_cbA, 
+            "pe_normal32_iat_stubA.dll", (LPVOID)(&bConfirm));
+    cheap2el_enumerate_import_tables(pe, 
+            _test_callback_resolve_imports_cbB, 
+            "pe_normal32_iat_stubB.dll", (LPVOID)(&bConfirm));
 
     GlobalFree(pe);
     if (!VirtualFree(buffers.lpVirtualPage, 0, MEM_RELEASE)) {

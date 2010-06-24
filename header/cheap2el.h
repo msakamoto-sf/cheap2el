@@ -31,10 +31,13 @@ extern "C" {
 #endif
 
 typedef enum _CHEAP2EL_ERROR_CODE {
-    CHEAP2EL_EC_NOT_DOS_HEADER = 0,
+    CHEAP2EL_EC_NONE = 0,
+    CHEAP2EL_EC_NOT_DOS_HEADER,
     CHEAP2EL_EC_NOT_NT_HEADERS,
     CHEAP2EL_EC_MEMORY_ALLOC,
-    CHEAP2EL_EC_LACK_OF_MEMORY_BUFFER
+    CHEAP2EL_EC_LACK_OF_MEMORY_BUFFER,
+    CHEAP2EL_EC_LOAD_LIBRARY_FAILURE,
+    CHEAP2EL_EC_GET_PROCADDRESS_FAILURE
 } CHEAP2EL_ERROR_CODE;
 
 typedef struct _CHEAP2EL_PE_IMAGE {
@@ -246,13 +249,21 @@ cheap2el_callback_update_base_relocations(
         LPVOID lpApplicationData
         );
 
+typedef struct _CHEAP2EL_CALLBACK_RESOLVE_IMPORTS_ARG {
+    HANDLE hModule;
+    DWORD dwLastError;
+    LPVOID lpErrInfo;
+    CHEAP2EL_ERROR_CODE err;
+} CHEAP2EL_CALLBACK_RESOLVE_IMPORTS_ARG, 
+    *PCHEAP2EL_CALLBACK_RESOLVE_IMPORTS_ARG;
 
-/*
-int
-cheap2el_resolve_iat(
-        PCHEAP2EL_PE_IMAGE pei
+BOOL
+cheap2el_callback_resolve_imports(
+        PCHEAP2EL_PE_IMAGE pe,
+        PIMAGE_IMPORT_DESCRIPTOR imp_desc,
+        int order,
+        LPVOID lpApplicationData
         );
-*/
 
 #ifdef __cplusplus
 }

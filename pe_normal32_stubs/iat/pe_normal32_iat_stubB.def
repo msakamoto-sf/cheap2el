@@ -1,0 +1,6 @@
+LIBRARY pe_normal32_iat_stubB.dll
+EXPORTS
+    funcB1
+    funcB2 @2 NONAME
+    varsB DATA
+
