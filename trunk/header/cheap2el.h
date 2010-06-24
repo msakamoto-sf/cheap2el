@@ -265,6 +265,12 @@ cheap2el_callback_resolve_imports(
         LPVOID lpApplicationData
         );
 
+BOOL
+cheap2el_pseudo_load_address_resolver(
+    PCHEAP2EL_PE_IMAGE pe,
+    PCHEAP2EL_CALLBACK_RESOLVE_IMPORTS_ARG arg
+    );
+
 #ifdef __cplusplus
 }
 #endif
