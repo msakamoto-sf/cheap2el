@@ -862,10 +862,12 @@ _test_enumerate_export_tables_forward_cb(
         )
 {
     CHEAP2EL_EXPORT_ENTRY expected[] = {
-        {0, 0, 0x00001000, 0x00009B16, 0x10009AF8, 0x10009B00, 0x10009B08, 
+        {0, 0, 0x00001000, 0x0000205E, 0x10002028, 0x10002034, 0x10002040, 
             (LPVOID)0x10001000, "funcA1", 0x00000001, 0, NULL},
-        {1, 1, 0x00009B24, 0x00009B1D, 0x10009AFC, 0x10009B04, 0x10009B0A, 
-            (LPVOID)0x00000000, "funcB1", 0x00000002, TRUE, "dll02.funcB2"},
+        {1, 1, 0x0000206C, 0x00002065, 0x1000202C, 0x10002038, 0x10002042, 
+            (LPVOID)0x00000000, "funcB1", 0x00000002, TRUE, "pe_normal32_forward_stub.funcB2"},
+        {2, 2, 0x00001010, 0x0000208C, 0x10002030, 0x1000203C, 0x10002044, 
+            (LPVOID)0x10001010, "funcC1", 0x00000003, 0, NULL},
     };
     DWORD *p;
     int order;
@@ -942,6 +944,8 @@ void test_get_export_rva_by_name(void)
     CU_ASSERT_EQUAL(rva, 0x1000);
     rva = cheap2el_get_export_rva_by_name(pe, "funcB1");
     CU_ASSERT_EQUAL(rva, 0);
+    rva = cheap2el_get_export_rva_by_name(pe, "funcC1");
+    CU_ASSERT_EQUAL(rva, 0x1010);
 
     GlobalFree(pe);
     FreeLibrary(hModule);
@@ -971,6 +975,8 @@ void test_get_export_rva_by_ordinal1(void)
     CU_ASSERT_EQUAL(rva, 0x1000);
     rva = cheap2el_get_export_rva_by_ordinal(pe, 2);
     CU_ASSERT_EQUAL(rva, 0);
+    rva = cheap2el_get_export_rva_by_ordinal(pe, 3);
+    CU_ASSERT_EQUAL(rva, 0x1010);
 
     GlobalFree(pe);
     FreeLibrary(hModule);
