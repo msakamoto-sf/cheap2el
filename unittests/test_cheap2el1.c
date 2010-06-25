@@ -501,7 +501,7 @@ void test_map_from_loaded_image_success(void)
     PIMAGE_SECTION_HEADER cursor = NULL;
     HANDLE hModule = NULL;
 
-    hModule = LoadLibrary("pe_normal32_entry.dll");
+    hModule = LoadLibrary("pe_normal32_with_entrypoint.dll");
     if (NULL == hModule) {
         _print_last_error(GetLastError());
         CU_FAIL("DLL Load error");
@@ -513,10 +513,10 @@ void test_map_from_loaded_image_success(void)
 
     CU_ASSERT_EQUAL(((DWORD)hModule), pe->dwActualImageBase);
     CU_ASSERT_EQUAL(pe->dosHeader->e_magic, IMAGE_DOS_SIGNATURE);
-    CU_ASSERT_EQUAL(pe->dosHeader->e_lfanew, 0xE8);
+    CU_ASSERT_EQUAL(pe->dosHeader->e_lfanew, 0xC0);
     CU_ASSERT_EQUAL(((DWORD)pe->lpDosStubAddress), 
             pe->dwActualImageBase + sizeof(IMAGE_DOS_HEADER));
-    CU_ASSERT_EQUAL(pe->dwSizeOfDosStub, 0xA8);
+    CU_ASSERT_EQUAL(pe->dwSizeOfDosStub, 0x80);
 
     // IMAGE_NT_HEADERS
     nt_headers = pe->ntHeaders;
@@ -525,7 +525,7 @@ void test_map_from_loaded_image_success(void)
 
     // IMAGE_FILE_HEADER
     file_header = &(nt_headers->FileHeader);
-    CU_ASSERT_EQUAL(file_header->NumberOfSections, 5);
+    CU_ASSERT_EQUAL(file_header->NumberOfSections, 3);
     CU_ASSERT_EQUAL(file_header->SizeOfOptionalHeader, 0xE0);
     CU_ASSERT_EQUAL(file_header->Characteristics, 
             IMAGE_FILE_DLL | 
@@ -536,11 +536,11 @@ void test_map_from_loaded_image_success(void)
     // IMAGE_OPTIONAL_HEADER
     opt_header = &(nt_headers->OptionalHeader);
     CU_ASSERT_EQUAL(opt_header->Magic, IMAGE_NT_OPTIONAL_HDR_MAGIC);
-    CU_ASSERT_EQUAL(opt_header->AddressOfEntryPoint, 0x1343);
+    CU_ASSERT_EQUAL(opt_header->AddressOfEntryPoint, 0x1090);
     CU_ASSERT_EQUAL(opt_header->ImageBase, 0x10000000);
     CU_ASSERT_EQUAL(opt_header->SectionAlignment, 0x1000);
     CU_ASSERT_EQUAL(opt_header->FileAlignment, 0x200);
-    CU_ASSERT_EQUAL(opt_header->SizeOfImage, 0xE000);
+    CU_ASSERT_EQUAL(opt_header->SizeOfImage, 0x4000);
     CU_ASSERT_EQUAL(opt_header->SizeOfHeaders, 0x400);
     CU_ASSERT_EQUAL(opt_header->Subsystem, IMAGE_SUBSYSTEM_WINDOWS_GUI);
     CU_ASSERT_EQUAL(opt_header->SizeOfStackReserve, 0x100000);
@@ -551,31 +551,16 @@ void test_map_from_loaded_image_success(void)
 
     // IMAGE_DATA_DIRECTORY
     ddptr = &(opt_header->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT]);
-    CU_ASSERT_EQUAL(ddptr->VirtualAddress, 0x9AD0);
-    CU_ASSERT_EQUAL(ddptr->Size, 0xCF);
-    ddptr = &(opt_header->DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT]);
-    CU_ASSERT_EQUAL(ddptr->VirtualAddress, 0x955C);
-    CU_ASSERT_EQUAL(ddptr->Size, 0x28);
-    ddptr = &(opt_header->DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE]);
-    CU_ASSERT_EQUAL(ddptr->VirtualAddress, 0xC000);
-    CU_ASSERT_EQUAL(ddptr->Size, 0xA0);
-    ddptr = &(opt_header->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC]);
-    CU_ASSERT_EQUAL(ddptr->VirtualAddress, 0xD000);
-    CU_ASSERT_EQUAL(ddptr->Size, 0x6F4);
-    ddptr = &(opt_header->DataDirectory[IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG]);
-    CU_ASSERT_EQUAL(ddptr->VirtualAddress, 0x9268);
-    CU_ASSERT_EQUAL(ddptr->Size, 0x40);
-    ddptr = &(opt_header->DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT]);
-    CU_ASSERT_EQUAL(ddptr->VirtualAddress, 0x8000);
-    CU_ASSERT_EQUAL(ddptr->Size, 0xF0);
+    CU_ASSERT_EQUAL(ddptr->VirtualAddress, 0x2000);
+    CU_ASSERT_EQUAL(ddptr->Size, 0xDC);
 
     // IMAGE_SECTION_HEADER
     //      #1
     cursor = &(pe->sectionHeaders[0]);
     CU_ASSERT_STRING_EQUAL(cursor->Name, ".text");
-    CU_ASSERT_EQUAL(cursor->Misc.VirtualSize, 0x6454);
+    CU_ASSERT_EQUAL(cursor->Misc.VirtualSize, 0x9C);
     CU_ASSERT_EQUAL(cursor->VirtualAddress, 0x1000);
-    CU_ASSERT_EQUAL(cursor->SizeOfRawData, 0x6600);
+    CU_ASSERT_EQUAL(cursor->SizeOfRawData, 0x200);
     CU_ASSERT_EQUAL(cursor->PointerToRawData, 0x400);
     CU_ASSERT_EQUAL(cursor->Characteristics, 
             IMAGE_SCN_CNT_CODE |
@@ -585,10 +570,10 @@ void test_map_from_loaded_image_success(void)
     //      #2
     cursor = &(pe->sectionHeaders[1]);
     CU_ASSERT_STRING_EQUAL(cursor->Name, ".rdata");
-    CU_ASSERT_EQUAL(cursor->Misc.VirtualSize, 0x1B9F);
-    CU_ASSERT_EQUAL(cursor->VirtualAddress, 0x8000);
-    CU_ASSERT_EQUAL(cursor->SizeOfRawData, 0x1C00);
-    CU_ASSERT_EQUAL(cursor->PointerToRawData, 0x6A00);
+    CU_ASSERT_EQUAL(cursor->Misc.VirtualSize, 0xDC);
+    CU_ASSERT_EQUAL(cursor->VirtualAddress, 0x2000);
+    CU_ASSERT_EQUAL(cursor->SizeOfRawData, 0x200);
+    CU_ASSERT_EQUAL(cursor->PointerToRawData, 0x600);
     CU_ASSERT_EQUAL(cursor->Characteristics, 
             IMAGE_SCN_CNT_INITIALIZED_DATA |
             IMAGE_SCN_MEM_READ
@@ -596,37 +581,14 @@ void test_map_from_loaded_image_success(void)
     //      #3
     cursor = &(pe->sectionHeaders[2]);
     CU_ASSERT_STRING_EQUAL(cursor->Name, ".data");
-    CU_ASSERT_EQUAL(cursor->Misc.VirtualSize, 0x18BC);
-    CU_ASSERT_EQUAL(cursor->VirtualAddress, 0xA000);
-    CU_ASSERT_EQUAL(cursor->SizeOfRawData, 0xE00);
-    CU_ASSERT_EQUAL(cursor->PointerToRawData, 0x8600);
+    CU_ASSERT_EQUAL(cursor->Misc.VirtualSize, 0x8);
+    CU_ASSERT_EQUAL(cursor->VirtualAddress, 0x3000);
+    CU_ASSERT_EQUAL(cursor->SizeOfRawData, 0x200);
+    CU_ASSERT_EQUAL(cursor->PointerToRawData, 0x800);
     CU_ASSERT_EQUAL(cursor->Characteristics, 
             IMAGE_SCN_CNT_INITIALIZED_DATA |
             IMAGE_SCN_MEM_READ |
             IMAGE_SCN_MEM_WRITE
-            );
-    //      #4
-    cursor = &(pe->sectionHeaders[3]);
-    CU_ASSERT_STRING_EQUAL(cursor->Name, ".rsrc");
-    CU_ASSERT_EQUAL(cursor->Misc.VirtualSize, 0xA0);
-    CU_ASSERT_EQUAL(cursor->VirtualAddress, 0xC000);
-    CU_ASSERT_EQUAL(cursor->SizeOfRawData, 0x200);
-    CU_ASSERT_EQUAL(cursor->PointerToRawData, 0x9400);
-    CU_ASSERT_EQUAL(cursor->Characteristics, 
-            IMAGE_SCN_CNT_INITIALIZED_DATA |
-            IMAGE_SCN_MEM_READ
-            );
-    //      #5
-    cursor = &(pe->sectionHeaders[4]);
-    CU_ASSERT_STRING_EQUAL(cursor->Name, ".reloc");
-    CU_ASSERT_EQUAL(cursor->Misc.VirtualSize, 0xC50);
-    CU_ASSERT_EQUAL(cursor->VirtualAddress, 0xD000);
-    CU_ASSERT_EQUAL(cursor->SizeOfRawData, 0xE00);
-    CU_ASSERT_EQUAL(cursor->PointerToRawData, 0x9600);
-    CU_ASSERT_EQUAL(cursor->Characteristics, 
-            IMAGE_SCN_CNT_INITIALIZED_DATA |
-            IMAGE_SCN_MEM_DISCARDABLE |
-            IMAGE_SCN_MEM_READ
             );
 
     GlobalFree(pe);
@@ -668,7 +630,7 @@ void test_get_export_directory_success1(void)
     PIMAGE_EXPORT_DIRECTORY ed = NULL;
     HANDLE hModule = NULL;
 
-    hModule = LoadLibrary("pe_normal32_entry.dll");
+    hModule = LoadLibrary("pe_normal32_with_entrypoint.dll");
     if (NULL == hModule) {
         _print_last_error(GetLastError());
         CU_FAIL("DLL Load error");
@@ -697,7 +659,7 @@ void test_get_export_directory_success2(void)
     PIMAGE_EXPORT_DIRECTORY ed = NULL;
     lam_arg buffers;
 
-    pe = _load_and_map_test_data(&buffers, "pe_normal32_entry.dll", &err);
+    pe = _load_and_map_test_data(&buffers, "pe_normal32_with_entrypoint.dll", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data() failed.");
         return;
@@ -830,7 +792,7 @@ void test_enumerate_export_tables(void)
     HANDLE hModule = NULL;
     DWORD indicator = 0;
 
-    hModule = LoadLibrary("pe_normal32_entry.dll");
+    hModule = LoadLibrary("pe_normal32_with_entrypoint.dll");
     if (NULL == hModule) {
         _print_last_error(GetLastError());
         CU_FAIL("DLL Load error");
@@ -994,18 +956,18 @@ void test_get_export_rva_by_ordinal2(void)
     int i;
 
     struct { int o; DWORD a; } indicators[9] = {
-        { 5, 0x1050},
-        { 7, 0x1070},
-        { 9, 0x1020},
+        { 5, 0x1030},
+        { 7, 0x1050},
+        { 9, 0x1010},
         {10, 0x1000},
-        {11, 0x1040},
-        {12, 0x1090},
-        {13, 0x10A0},
-        {14, 0xA000},
-        {15, 0xA004}
+        {11, 0x1020},
+        {12, 0x1070},
+        {13, 0x1080},
+        {14, 0x3000},
+        {15, 0x3004}
     };
 
-    hModule = LoadLibrary("pe_normal32_entry.dll");
+    hModule = LoadLibrary("pe_normal32_with_entrypoint.dll");
     if (NULL == hModule) {
         _print_last_error(GetLastError());
         CU_FAIL("DLL Load error");
