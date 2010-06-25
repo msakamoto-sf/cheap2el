@@ -10,21 +10,11 @@ cheap2el:force-builds
 
 clean:force-builds
 	cd src && $(MAKE) $(MAKEOPTS) clean && cd ..
-
-all-clean:clean
 	cd unittests && $(MAKE) $(MAKEOPTS) clean && cd ..
-	cd test_exe && $(MAKE) $(MAKEOPTS) clean && cd ..
-	cd test_dll_entry && $(MAKE) $(MAKEOPTS) clean && cd ..
-	cd test_dll_noentry && $(MAKE) $(MAKEOPTS) clean && cd ..
 
 test:force-builds
 	cd src && $(MAKE) $(MAKEOPTS) && cd ..
 	set PATH=%PATH%;.\\datafiles
 	cd unittests && $(MAKE) $(MAKEOPTS) && main.exe && cd ..
-
-stub:force-builds
-	cd test_exe && $(MAKE) $(MAKEOPTS) && cd ..
-	cd test_dll_entry && $(MAKE) $(MAKEOPTS) && cd ..
-	cd test_dll_noentry && $(MAKE) $(MAKEOPTS) && cd ..
 
 force-builds:

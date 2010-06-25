@@ -24,6 +24,8 @@
 
 #include "Basic.h"
 
+// {{{ CU_TestInfo tests_mapper[] and externs
+
 extern void test_get_sizeofimage_from_file(void);
 extern void test_map_to_memory_failure(void);
 extern void test_map_to_memory_success(void);
@@ -32,6 +34,22 @@ extern void test_map_from_loaded_image_success(void);
 extern void test_get_export_directory_failure(void);
 extern void test_get_export_directory_success1(void);
 extern void test_get_export_directory_success2(void);
+
+CU_TestInfo tests_mapper[] = {
+    {"test_get_sizeofimage_from_file", test_get_sizeofimage_from_file},
+    {"test_map_to_memory_failure", test_map_to_memory_failure},
+    {"test_map_to_memory_success", test_map_to_memory_success},
+    {"test_map_from_loaded_image_failure", test_map_from_loaded_image_failure},
+    {"test_map_from_loaded_image_success", test_map_from_loaded_image_success},
+    {"test_get_export_directory_failure", test_get_export_directory_failure},
+    {"test_get_export_directory_success1", test_get_export_directory_success1},
+    {"test_get_export_directory_success2", test_get_export_directory_success2},
+    CU_TEST_INFO_NULL,
+};
+
+// }}}
+// {{{ CU_TestInfo tests_enumerator[] and externs
+
 extern void test_enumerate_export_tables_0(void);
 extern void test_enumerate_export_tables(void);
 extern void test_enumerate_export_tables_forward(void);
@@ -56,21 +74,8 @@ extern void test_enumerate_delayload_tables_NM(void);
 extern void test_enumerate_base_relocations_0(void);
 extern void test_enumerate_base_relocations_1(void);
 extern void test_enumerate_base_relocations_N(void);
-extern void test_callback_update_base_relocations1(void);
-extern void test_callback_update_base_relocations2(void);
-extern void test_callback_resolve_imports(void);
-extern void test_pseudo_load(void);
-extern void test_version(void);
 
-CU_TestInfo test_array1[] = {
-    {"test_get_sizeofimage_from_file", test_get_sizeofimage_from_file},
-    {"test_map_to_memory_failure", test_map_to_memory_failure},
-    {"test_map_to_memory_success", test_map_to_memory_success},
-    {"test_map_from_loaded_image_failure", test_map_from_loaded_image_failure},
-    {"test_map_from_loaded_image_success", test_map_from_loaded_image_success},
-    {"test_get_export_directory_failure", test_get_export_directory_failure},
-    {"test_get_export_directory_success1", test_get_export_directory_success1},
-    {"test_get_export_directory_success2", test_get_export_directory_success2},
+CU_TestInfo tests_enumerator[] = {
     {"test_enumerate_export_tables_0", test_enumerate_export_tables_0},
     {"test_enumerate_export_tables_forward", test_enumerate_export_tables_forward},
     {"test_get_export_rva_by_name", test_get_export_rva_by_name},
@@ -94,16 +99,42 @@ CU_TestInfo test_array1[] = {
     {"test_enumerate_base_relocations_0", test_enumerate_base_relocations_0},
     {"test_enumerate_base_relocations_1", test_enumerate_base_relocations_1},
     {"test_enumerate_base_relocations_N", test_enumerate_base_relocations_N},
+    CU_TEST_INFO_NULL,
+};
+
+// }}}
+// {{{ CU_TestInfo tests_callbacks[] and externs
+
+extern void test_callback_update_base_relocations1(void);
+extern void test_callback_update_base_relocations2(void);
+extern void test_callback_resolve_imports(void);
+extern void test_pseudo_load(void);
+
+CU_TestInfo tests_callbacks[] = {
     {"test_callback_update_base_relocations1", test_callback_update_base_relocations1},
     {"test_callback_update_base_relocations2", test_callback_update_base_relocations2},
     {"test_callback_resolve_imports", test_callback_resolve_imports},
     {"test_pseudo_load", test_pseudo_load},
+    CU_TEST_INFO_NULL,
+};
+
+// }}}
+// {{{ CU_TestInfo tests_version[] and externs
+
+extern void test_version(void);
+
+CU_TestInfo tests_version[] = {
     {"test_version", test_version},
     CU_TEST_INFO_NULL,
 };
 
+// }}}
+
 CU_SuiteInfo suites[] = {
-    {"suite1", NULL, NULL, test_array1},
+    {"cheap2el_mapper", NULL, NULL, tests_mapper},
+    {"cheap2el_enumerator", NULL, NULL, tests_enumerator},
+    {"cheap2el_callbacks", NULL, NULL, tests_callbacks},
+    {"cheap2el_version", NULL, NULL, tests_version},
     CU_SUITE_INFO_NULL,
 };
 

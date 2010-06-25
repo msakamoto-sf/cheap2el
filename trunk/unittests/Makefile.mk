@@ -5,17 +5,19 @@
 
 PROJNAME=main
 TARGET=$(PROJNAME).exe
-SRCS=$(PROJNAME).c  test_cheap2el1.c
-OBJS=$(PROJNAME).obj test_cheap2el1.obj
+OBJS=test_00_main.obj \
+     test_00_util.obj \
+     test_mapper.obj \
+     test_enumerator.obj \
+     test_callbacks.obj \
+     test_version.obj
 
 !include <..\common.mk>
 
 CFLAGS=$(CFLAGS) /I ..\header
 
 $(TARGET):$(OBJS) ..\cheap2el.lib
-	$(CC) $(CFLAGS) /Fe$(PROJNAME).exe $(OBJS) libcunit.lib ..\cheap2el.lib /link $(LFLAGS)
-
-$(OBJS):$(SRCS)
+	$(CC) $(CFLAGS) /Fe$(TARGET) $(OBJS) libcunit.lib ..\cheap2el.lib /link $(LFLAGS)
 
 clean:
 	del *.obj
