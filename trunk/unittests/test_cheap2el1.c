@@ -2735,4 +2735,16 @@ void test_pseudo_load(void)
 }
 
 // }}}
+// {{{ test_version()
+
+void test_version(void)
+{
+    DWORD major, minor, rel;
+    cheap2el_version(&major, &minor, &rel);
+    CU_ASSERT_EQUAL(major, CHEAP2EL_VERSION_MAJOR);
+    CU_ASSERT_EQUAL(minor, CHEAP2EL_VERSION_MINOR);
+    CU_ASSERT_EQUAL(rel, CHEAP2EL_VERSION_RELEASE);
+}
+
+// }}}
 

@@ -60,6 +60,7 @@ extern void test_callback_update_base_relocations1(void);
 extern void test_callback_update_base_relocations2(void);
 extern void test_callback_resolve_imports(void);
 extern void test_pseudo_load(void);
+extern void test_version(void);
 
 CU_TestInfo test_array1[] = {
     {"test_get_sizeofimage_from_file", test_get_sizeofimage_from_file},
@@ -97,6 +98,7 @@ CU_TestInfo test_array1[] = {
     {"test_callback_update_base_relocations2", test_callback_update_base_relocations2},
     {"test_callback_resolve_imports", test_callback_resolve_imports},
     {"test_pseudo_load", test_pseudo_load},
+    {"test_version", test_version},
     CU_TEST_INFO_NULL,
 };
 

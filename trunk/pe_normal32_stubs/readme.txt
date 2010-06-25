@@ -1,5 +1,5 @@
 This directory includes ".exe" and ".dll" stub projects (sources, Makefiles) for c-unit test datas.
-All ".exe" and ".dll" have already been compiled, and stored in "..\unittests" directory ("pe_normal32_" prefix).
+All ".exe" and ".dll" have already been compiled, and stored in "..\unittests\datafiles" directory ("pe_normal32_" prefix).
 
 Compiled Platform : Pentium4, Windows XP SP3 (Japanese)
 SDK : Microsoft Visual C++ 2008 Express Edition SP1 - Japanese
