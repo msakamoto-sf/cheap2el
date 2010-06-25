@@ -30,6 +30,20 @@
 extern "C" {
 #endif
 
+/* architecture version */
+#define CHEAP2EL_VERSION_MAJOR (1)
+/* interface version */
+#define CHEAP2EL_VERSION_MINOR (1)
+/* implementation version */
+#define CHEAP2EL_VERSION_RELEASE (1)
+
+void
+cheap2el_version(
+        DWORD *major, 
+        DWORD *minor, 
+        DWORD *release
+        );
+
 typedef enum _CHEAP2EL_ERROR_CODE {
     CHEAP2EL_EC_NONE = 0,
     CHEAP2EL_EC_NOT_DOS_HEADER,

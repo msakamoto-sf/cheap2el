@@ -3,18 +3,20 @@
 # $Id$
 #
 
-TARGET=..\cheap2el.lib
-SRCS=cheap2el.c
-OBJS=cheap2el.obj
+PROJNAME=cheap2el
+
+TARGET=..\$(PROJNAME).lib
+OBJS=$(PROJNAME)_mapper.obj \
+     $(PROJNAME)_enumerator.obj \
+     $(PROJNAME)_callbacks.obj \
+     $(PROJNAME)_version.obj
 
 !include <..\common.mk>
 
 CFLAGS=$(CFLAGS) /I ..\header
 
 $(TARGET):$(OBJS)
-	lib /out:$(TARGET) $?
-
-$(OBJS):$(SRCS)
+	lib /out:$(TARGET) $(OBJS)
 
 clean:
 	del *.obj
