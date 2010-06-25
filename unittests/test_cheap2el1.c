@@ -205,9 +205,9 @@ void test_get_sizeofimage_from_file(void)
     GlobalFree(lpFileBuffer);
 
     // }}}
-    // {{{ pe_normal32.dat
+    // {{{ pe_normal32_exe.dat
 
-    lpFileBuffer = _load_test_data("pe_normal32.dat");
+    lpFileBuffer = _load_test_data("pe_normal32_exe.dat");
     if (NULL == lpFileBuffer) {
         CU_FAIL("memory error");
         return;
@@ -283,9 +283,9 @@ void test_map_to_memory_failure(void)
 
     GlobalFree(lpMemoryBuffer);
 
-    // {{{ pe_normal32.dat : lack of memory
+    // {{{ pe_normal32_exe.dat : lack of memory
 
-    lpFileBuffer = _load_test_data("pe_normal32.dat");
+    lpFileBuffer = _load_test_data("pe_normal32_exe.dat");
     if (NULL == lpFileBuffer) {
         CU_FAIL("memory error");
         return;
@@ -321,9 +321,9 @@ void test_map_to_memory_success(void)
     PIMAGE_DATA_DIRECTORY ddptr;
     PIMAGE_SECTION_HEADER cursor = NULL;
 
-    // pe_normal32.dat : shoud result no error
+    // pe_normal32_exe.dat : shoud result no error
 
-    lpFileBuffer = _load_test_data("pe_normal32.dat");
+    lpFileBuffer = _load_test_data("pe_normal32_exe.dat");
     if (NULL == lpFileBuffer) {
         CU_FAIL("memory error");
         return;
@@ -644,7 +644,7 @@ void test_get_export_directory_failure(void)
     PIMAGE_EXPORT_DIRECTORY ed = NULL;
     lam_arg buffers;
 
-    pe = _load_and_map_test_data(&buffers, "pe_normal32.dat", &err);
+    pe = _load_and_map_test_data(&buffers, "pe_normal32_exe.dat", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data() failed.");
         return;
@@ -740,7 +740,7 @@ void test_enumerate_export_tables_0(void)
     DWORD indicator = 0;
     lam_arg buffers;
 
-    pe = _load_and_map_test_data(&buffers, "pe_normal32.dat", &err);
+    pe = _load_and_map_test_data(&buffers, "pe_normal32_exe.dat", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data() failed.");
         return;
