@@ -179,7 +179,7 @@ void test_get_sizeofimage_from_file(void)
 
     // {{{ pe_not_mz.dat
 
-    lpFileBuffer = _load_test_data("pe_not_mz.dat");
+    lpFileBuffer = _load_test_data("datafiles\\pe_not_mz.dat");
     if (NULL == lpFileBuffer) {
         CU_FAIL("memory error");
         return;
@@ -193,7 +193,7 @@ void test_get_sizeofimage_from_file(void)
     // }}}
     // {{{ pe_not_nt.dat
 
-    lpFileBuffer = _load_test_data("pe_not_nt.dat");
+    lpFileBuffer = _load_test_data("datafiles\\pe_not_nt.dat");
     if (NULL == lpFileBuffer) {
         CU_FAIL("memory error");
         return;
@@ -207,7 +207,7 @@ void test_get_sizeofimage_from_file(void)
     // }}}
     // {{{ pe_normal32_exe.dat
 
-    lpFileBuffer = _load_test_data("pe_normal32_exe.dat");
+    lpFileBuffer = _load_test_data("datafiles\\pe_normal32_exe.dat");
     if (NULL == lpFileBuffer) {
         CU_FAIL("memory error");
         return;
@@ -236,7 +236,7 @@ void test_map_to_memory_failure(void)
 
     // {{{ lpMemoryBuffer == NULL
 
-    lpFileBuffer = _load_test_data("pe_not_mz.dat");
+    lpFileBuffer = _load_test_data("datafiles\\pe_not_mz.dat");
     if (NULL == lpFileBuffer) {
         CU_FAIL("memory error");
         return;
@@ -254,7 +254,7 @@ void test_map_to_memory_failure(void)
 
     // {{{ pe_not_mz.dat
 
-    lpFileBuffer = _load_test_data("pe_not_mz.dat");
+    lpFileBuffer = _load_test_data("datafiles\\pe_not_mz.dat");
     if (NULL == lpFileBuffer) {
         CU_FAIL("memory error");
         return;
@@ -268,7 +268,7 @@ void test_map_to_memory_failure(void)
     // }}}
     // {{{ pe_not_nt.dat
 
-    lpFileBuffer = _load_test_data("pe_not_nt.dat");
+    lpFileBuffer = _load_test_data("datafiles\\pe_not_nt.dat");
     if (NULL == lpFileBuffer) {
         CU_FAIL("memory error");
         return;
@@ -285,7 +285,7 @@ void test_map_to_memory_failure(void)
 
     // {{{ pe_normal32_exe.dat : lack of memory
 
-    lpFileBuffer = _load_test_data("pe_normal32_exe.dat");
+    lpFileBuffer = _load_test_data("datafiles\\pe_normal32_exe.dat");
     if (NULL == lpFileBuffer) {
         CU_FAIL("memory error");
         return;
@@ -323,7 +323,7 @@ void test_map_to_memory_success(void)
 
     // pe_normal32_exe.dat : shoud result no error
 
-    lpFileBuffer = _load_test_data("pe_normal32_exe.dat");
+    lpFileBuffer = _load_test_data("datafiles\\pe_normal32_exe.dat");
     if (NULL == lpFileBuffer) {
         CU_FAIL("memory error");
         return;
@@ -461,7 +461,7 @@ void test_map_from_loaded_image_failure(void)
     // }}}
     // {{{ pe_not_mz.dat
 
-    lpFileBuffer = _load_test_data("pe_not_mz.dat");
+    lpFileBuffer = _load_test_data("datafiles\\pe_not_mz.dat");
     if (NULL == lpFileBuffer) {
         CU_FAIL("memory error");
         return;
@@ -474,7 +474,7 @@ void test_map_from_loaded_image_failure(void)
     // }}}
     // {{{ pe_not_nt.dat
 
-    lpFileBuffer = _load_test_data("pe_not_nt.dat");
+    lpFileBuffer = _load_test_data("datafiles\\pe_not_nt.dat");
     if (NULL == lpFileBuffer) {
         CU_FAIL("memory error");
         return;
@@ -501,7 +501,7 @@ void test_map_from_loaded_image_success(void)
     PIMAGE_SECTION_HEADER cursor = NULL;
     HANDLE hModule = NULL;
 
-    hModule = LoadLibrary("pe_normal32_with_entrypoint.dll");
+    hModule = LoadLibrary("datafiles\\pe_normal32_with_entrypoint.dll");
     if (NULL == hModule) {
         _print_last_error(GetLastError());
         CU_FAIL("DLL Load error");
@@ -606,7 +606,7 @@ void test_get_export_directory_failure(void)
     PIMAGE_EXPORT_DIRECTORY ed = NULL;
     lam_arg buffers;
 
-    pe = _load_and_map_test_data(&buffers, "pe_normal32_exe.dat", &err);
+    pe = _load_and_map_test_data(&buffers, "datafiles\\pe_normal32_exe.dat", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data() failed.");
         return;
@@ -630,7 +630,7 @@ void test_get_export_directory_success1(void)
     PIMAGE_EXPORT_DIRECTORY ed = NULL;
     HANDLE hModule = NULL;
 
-    hModule = LoadLibrary("pe_normal32_with_entrypoint.dll");
+    hModule = LoadLibrary("datafiles\\pe_normal32_with_entrypoint.dll");
     if (NULL == hModule) {
         _print_last_error(GetLastError());
         CU_FAIL("DLL Load error");
@@ -659,7 +659,7 @@ void test_get_export_directory_success2(void)
     PIMAGE_EXPORT_DIRECTORY ed = NULL;
     lam_arg buffers;
 
-    pe = _load_and_map_test_data(&buffers, "pe_normal32_with_entrypoint.dll", &err);
+    pe = _load_and_map_test_data(&buffers, "datafiles\\pe_normal32_with_entrypoint.dll", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data() failed.");
         return;
@@ -702,7 +702,7 @@ void test_enumerate_export_tables_0(void)
     DWORD indicator = 0;
     lam_arg buffers;
 
-    pe = _load_and_map_test_data(&buffers, "pe_normal32_exe.dat", &err);
+    pe = _load_and_map_test_data(&buffers, "datafiles\\pe_normal32_exe.dat", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data() failed.");
         return;
@@ -792,7 +792,7 @@ void test_enumerate_export_tables(void)
     HANDLE hModule = NULL;
     DWORD indicator = 0;
 
-    hModule = LoadLibrary("pe_normal32_with_entrypoint.dll");
+    hModule = LoadLibrary("datafiles\\pe_normal32_with_entrypoint.dll");
     if (NULL == hModule) {
         _print_last_error(GetLastError());
         CU_FAIL("DLL Load error");
@@ -863,7 +863,7 @@ void test_enumerate_export_tables_forward(void)
     HANDLE hModule = NULL;
     DWORD indicator = 0;
 
-    hModule = LoadLibrary("pe_normal32_forward.dll");
+    hModule = LoadLibrary("datafiles\\pe_normal32_forward.dll");
     if (NULL == hModule) {
         _print_last_error(GetLastError());
         CU_FAIL("DLL Load error");
@@ -894,7 +894,7 @@ void test_get_export_rva_by_name(void)
     HANDLE hModule = NULL;
     DWORD rva;
 
-    hModule = LoadLibrary("pe_normal32_forward.dll");
+    hModule = LoadLibrary("datafiles\\pe_normal32_forward.dll");
     if (NULL == hModule) {
         _print_last_error(GetLastError());
         CU_FAIL("DLL Load error");
@@ -925,7 +925,7 @@ void test_get_export_rva_by_ordinal1(void)
     HANDLE hModule = NULL;
     DWORD rva;
 
-    hModule = LoadLibrary("pe_normal32_forward.dll");
+    hModule = LoadLibrary("datafiles\\pe_normal32_forward.dll");
     if (NULL == hModule) {
         _print_last_error(GetLastError());
         CU_FAIL("DLL Load error");
@@ -967,7 +967,7 @@ void test_get_export_rva_by_ordinal2(void)
         {15, 0x3004}
     };
 
-    hModule = LoadLibrary("pe_normal32_with_entrypoint.dll");
+    hModule = LoadLibrary("datafiles\\pe_normal32_with_entrypoint.dll");
     if (NULL == hModule) {
         _print_last_error(GetLastError());
         CU_FAIL("DLL Load error");
@@ -1011,7 +1011,7 @@ void test_enumerate_import_directory_0(void)
     DWORD indicator = 0;
     int result = 0;
 
-    hModule = LoadLibrary("pe_normal32_0imps.dll");
+    hModule = LoadLibrary("datafiles\\pe_normal32_0imps.dll");
     if (NULL == hModule) {
         _print_last_error(GetLastError());
         CU_FAIL("DLL Load error");
@@ -1064,7 +1064,7 @@ void test_enumerate_import_directory_1(void)
     BOOL cbr;
     int result = 0;
 
-    hModule = LoadLibrary("pe_normal32_1imps.dll");
+    hModule = LoadLibrary("datafiles\\pe_normal32_1imps.dll");
     if (NULL == hModule) {
         _print_last_error(GetLastError());
         CU_FAIL("DLL Load error");
@@ -1133,7 +1133,7 @@ void test_enumerate_import_directory_N(void)
     int appdata;
     int result = 0;
 
-    hModule = LoadLibrary("pe_normal32_Nimps.dll");
+    hModule = LoadLibrary("datafiles\\pe_normal32_Nimps.dll");
     if (NULL == hModule) {
         _print_last_error(GetLastError());
         CU_FAIL("DLL Load error");
@@ -1199,7 +1199,7 @@ void test_enumerate_import_tables_0(void)
     DWORD indicator = 0;
     int result = 0;
 
-    hModule = LoadLibrary("pe_normal32_0imps.dll");
+    hModule = LoadLibrary("datafiles\\pe_normal32_0imps.dll");
     if (NULL == hModule) {
         _print_last_error(GetLastError());
         CU_FAIL("DLL Load error");
@@ -1271,7 +1271,7 @@ void test_enumerate_import_tables_1(void)
     BOOL cbr;
     int result = 0;
 
-    hModule = LoadLibrary("pe_normal32_1imps.dll");
+    hModule = LoadLibrary("datafiles\\pe_normal32_1imps.dll");
     if (NULL == hModule) {
         _print_last_error(GetLastError());
         CU_FAIL("DLL Load error");
@@ -1409,7 +1409,7 @@ void test_enumerate_import_tables_M(void)
     int appdata;
     int result = 0;
 
-    hModule = LoadLibrary("pe_normal32_Mimps.dll");
+    hModule = LoadLibrary("datafiles\\pe_normal32_Mimps.dll");
     if (NULL == hModule) {
         _print_last_error(GetLastError());
         CU_FAIL("DLL Load error");
@@ -1488,7 +1488,7 @@ void test_enumerate_bound_imports_0(void)
     int result = 0;
     lam_arg buffers;
 
-    pe = _load_and_map_test_data(&buffers, "pe_normal32_0imps.dll", &err);
+    pe = _load_and_map_test_data(&buffers, "datafiles\\pe_normal32_0imps.dll", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data() failed.");
         return;
@@ -1545,7 +1545,7 @@ void test_enumerate_bound_imports_1(void)
     int result = 0;
     lam_arg buffers;
 
-    pe = _load_and_map_test_data(&buffers, "pe_normal32_1binds.dll", &err);
+    pe = _load_and_map_test_data(&buffers, "datafiles\\pe_normal32_1binds.dll", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data() failed.");
         return;
@@ -1672,7 +1672,7 @@ void test_enumerate_bound_imports_N(void)
     int result = 0;
     lam_arg buffers;
 
-    pe = _load_and_map_test_data(&buffers, "pe_normal32_Nbinds.dll", &err);
+    pe = _load_and_map_test_data(&buffers, "datafiles\\pe_normal32_Nbinds.dll", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data() failed.");
         return;
@@ -1736,7 +1736,7 @@ void test_enumerate_delay_load_0(void)
     int result = 0;
     lam_arg buffers;
 
-    pe = _load_and_map_test_data(&buffers, "pe_normal32_0imps.dll", &err);
+    pe = _load_and_map_test_data(&buffers, "datafiles\\pe_normal32_0imps.dll", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data() failed.");
         return;
@@ -1805,7 +1805,7 @@ void test_enumerate_delay_load_1(void)
     int result = 0;
     lam_arg buffers;
 
-    pe = _load_and_map_test_data(&buffers, "pe_normal32_delay1.dll", &err);
+    pe = _load_and_map_test_data(&buffers, "datafiles\\pe_normal32_delay1.dll", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data() failed.");
         return;
@@ -1899,7 +1899,7 @@ void test_enumerate_delay_load_N1(void)
     int result = 0;
     lam_arg buffers;
 
-    pe = _load_and_map_test_data(&buffers, "pe_normal32_delayN1.dll", &err);
+    pe = _load_and_map_test_data(&buffers, "datafiles\\pe_normal32_delayN1.dll", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data() failed.");
         return;
@@ -1957,7 +1957,7 @@ void test_enumerate_delayload_tables_0(void)
     int result = 0;
     lam_arg buffers;
 
-    pe = _load_and_map_test_data(&buffers, "pe_normal32_0imps.dll", &err);
+    pe = _load_and_map_test_data(&buffers, "datafiles\\pe_normal32_0imps.dll", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data() failed.");
         return;
@@ -2026,7 +2026,7 @@ void test_enumerate_delayload_tables_N1(void)
     int result = 0;
     lam_arg buffers;
 
-    pe = _load_and_map_test_data(&buffers, "pe_normal32_delay1.dll", &err);
+    pe = _load_and_map_test_data(&buffers, "datafiles\\pe_normal32_delay1.dll", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data() failed.");
         return;
@@ -2154,7 +2154,7 @@ void test_enumerate_delayload_tables_NM(void)
     int result = 0;
     lam_arg buffers;
 
-    pe = _load_and_map_test_data(&buffers, "pe_normal32_delayNM.dll", &err);
+    pe = _load_and_map_test_data(&buffers, "datafiles\\pe_normal32_delayNM.dll", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data() failed.");
         return;
@@ -2226,7 +2226,7 @@ void test_enumerate_base_relocations_0(void)
     int result = 0;
     lam_arg buffers;
 
-    pe = _load_and_map_test_data(&buffers, "pe_normal32_0imps.dll", &err);
+    pe = _load_and_map_test_data(&buffers, "datafiles\\pe_normal32_0imps.dll", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data() failed.");
         return;
@@ -2296,7 +2296,7 @@ void test_enumerate_base_relocations_1(void)
     int result = 0;
     lam_arg buffers;
 
-    pe = _load_and_map_test_data(&buffers, "pe_normal32_reloc1.dll", &err);
+    pe = _load_and_map_test_data(&buffers, "datafiles\\pe_normal32_reloc1.dll", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data() failed.");
         return;
@@ -2381,7 +2381,7 @@ void test_enumerate_base_relocations_N(void)
     int result = 0;
     lam_arg buffers;
 
-    pe = _load_and_map_test_data(&buffers, "pe_normal32_relocN.dll", &err);
+    pe = _load_and_map_test_data(&buffers, "datafiles\\pe_normal32_relocN.dll", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data() failed.");
         return;
@@ -2464,8 +2464,8 @@ void test_callback_update_base_relocations1(void)
     int result = 0;
     lam_arg2 buffers;
 
-    pe = _load_and_map_test_data2(
-            (LPVOID)0x05000000, &buffers, "pe_normal32_relocN.dll", &err);
+    pe = _load_and_map_test_data2((LPVOID)0x05000000, &buffers, 
+            "datafiles\\pe_normal32_relocN.dll", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data2() failed.");
         return;
@@ -2539,8 +2539,8 @@ void test_callback_update_base_relocations2(void)
     int result = 0;
     lam_arg2 buffers;
 
-    pe = _load_and_map_test_data2(
-            (LPVOID)0x20000000, &buffers, "pe_normal32_relocN.dll", &err);
+    pe = _load_and_map_test_data2((LPVOID)0x20000000, &buffers, 
+            "datafiles\\pe_normal32_relocN.dll", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data2() failed.");
         return;
@@ -2625,8 +2625,8 @@ void test_callback_resolve_imports(void)
     BOOL bConfirm = FALSE;
     lam_arg2 buffers;
 
-    pe = _load_and_map_test_data2(
-            NULL, &buffers, "pe_normal32_iat.dll", &err);
+    pe = _load_and_map_test_data2(NULL, &buffers, 
+            "datafiles\\pe_normal32_iat.dll", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data2() failed.");
         return;
@@ -2689,8 +2689,8 @@ void test_pseudo_load(void)
     char str_res_buf[1024];
     int str_res_buf_sz = sizeof(str_res_buf)/sizeof(str_res_buf[0]);
 
-    pe = _load_and_map_test_data2(
-            NULL, &buffers, "pe_normal32_iat.dll", &err);
+    pe = _load_and_map_test_data2(NULL, &buffers, 
+            "datafiles\\pe_normal32_iat.dll", &err);
     if (NULL == pe) {
         CU_FAIL("_load_and_map_test_data2() failed.");
         return;
