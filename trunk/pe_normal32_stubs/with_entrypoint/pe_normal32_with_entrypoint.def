@@ -1,4 +1,4 @@
-LIBRARY test_dll_entry
+LIBRARY pe_normal32_with_entrypoint
 EXPORTS
     func1
     func2 @5

@@ -1,8 +1,0 @@
-#include <windows.h>
-#include "resource.h"
-
-LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
-STRINGTABLE
-{
-    IDS_STRING1                   "English Text."
-}
