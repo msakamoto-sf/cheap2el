@@ -50,7 +50,7 @@ cheap2el_callback_update_base_relocations(
         wbuf = *tofs;
         // upper 4bit
         br_type = (0xF000 & wbuf) >> 12;
-        br_offset = 0xFF & wbuf;
+        br_offset = 0xFFF & wbuf;
         switch (br_type) {
             case IMAGE_REL_BASED_HIGHLOW:
                 break;
