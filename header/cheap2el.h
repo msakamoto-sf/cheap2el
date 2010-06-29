@@ -56,6 +56,7 @@ typedef enum _CHEAP2EL_ERROR_CODE {
 
 typedef struct _CHEAP2EL_PE_IMAGE {
     DWORD dwActualImageBase;
+    DWORD dwPseudoImageBase;
     PIMAGE_DOS_HEADER dosHeader;
     LPVOID lpDosStubAddress;
     DWORD dwSizeOfDosStub;

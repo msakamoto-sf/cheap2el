@@ -176,6 +176,84 @@ void test_callback_update_base_relocations2(void)
 }
 
 // }}}
+// {{{ test_callback_update_base_relocations3()
+
+static BOOL
+_test_callback_update_base_relocations_cb3(
+        PCHEAP2EL_PE_IMAGE pe,
+        PCHEAP2EL_BASERELOC_ENTRY bre,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    PWORD tofs = NULL;
+    DWORD dwbuf;
+    PDWORD dwptr;
+    WORD wbuf, br_type, br_offset;
+    int i;
+    // effective addresses
+    static DWORD ea[2][4] = {
+        {0x00152000, 0x00153004, 0x00153008, 0x00152008},
+        {0x00151000, 0, 0, 0}
+    };
+
+    tofs = bre->TypeOffset;
+    for (i = 0; i < bre->NumberOfTypeOffset; i++, tofs++) {
+        wbuf = *tofs;
+        br_type = (0xF000 & wbuf) >> 12;
+        br_offset = 0xFF & wbuf;
+        if (IMAGE_REL_BASED_HIGHLOW != br_type) {
+            continue;
+        }
+        dwbuf = pe->dwActualImageBase + bre->BaseRelocation->VirtualAddress + br_offset;
+        dwptr = (PDWORD)dwbuf;
+        dwbuf = *dwptr;
+/*
+        printf("[%d][%d] = actual:0x%08X/expected:0x%08X\n", 
+                order, i, dwbuf, ea[order][i]);
+*/
+        CU_ASSERT_EQUAL(dwbuf, ea[order][i]);
+    }
+
+    return FALSE;
+}
+
+void test_callback_update_base_relocations3(void)
+{
+    PCHEAP2EL_PE_IMAGE pe = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    int result = 0;
+    lam_arg2 buffers;
+
+    pe = _load_and_map_test_data2(NULL, &buffers, 
+            "datafiles\\pe_normal32_relocN.dll", &err);
+    if (NULL == pe) {
+        CU_FAIL("_load_and_map_test_data2() failed.");
+        return;
+    }
+
+    // pseudo image base address
+    pe->dwPseudoImageBase = 0x00150000;
+
+    // update base relocations
+    result = cheap2el_enumerate_base_relocations(pe, 
+            cheap2el_callback_update_base_relocations, (LPVOID)NULL);
+    CU_ASSERT_EQUAL(result, 2);
+
+    // confirm updated addresses
+    result = cheap2el_enumerate_base_relocations(pe, 
+            _test_callback_update_base_relocations_cb3, (LPVOID)NULL);
+    CU_ASSERT_EQUAL(result, 2);
+
+    GlobalFree(pe);
+    if (!VirtualFree(buffers.lpVirtualPage, 0, MEM_RELEASE)) {
+        _print_last_error(GetLastError());
+        CU_FAIL("VirtualFree() error");
+    }
+    GlobalFree(buffers.lpFileBuffer);
+}
+
+// }}}
 // {{{ test_callback_resolve_imports()
 
 // {{{ _test_callback_resolve_imports_cbA()

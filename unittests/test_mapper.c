@@ -195,6 +195,7 @@ void test_map_to_memory_success(void)
     CU_ASSERT_PTR_NOT_NULL(pe);
 
     CU_ASSERT_EQUAL(((DWORD)lpMemoryBuffer), pe->dwActualImageBase);
+    CU_ASSERT_EQUAL(((DWORD)lpMemoryBuffer), pe->dwPseudoImageBase);
     CU_ASSERT_EQUAL(pe->dosHeader->e_magic, IMAGE_DOS_SIGNATURE);
     CU_ASSERT_EQUAL(pe->dosHeader->e_lfanew, 0xE0);
     CU_ASSERT_EQUAL(((DWORD)pe->lpDosStubAddress), 
@@ -370,6 +371,7 @@ void test_map_from_loaded_image_success(void)
     CU_ASSERT_PTR_NOT_NULL(pe);
 
     CU_ASSERT_EQUAL(((DWORD)hModule), pe->dwActualImageBase);
+    CU_ASSERT_EQUAL(((DWORD)hModule), pe->dwPseudoImageBase);
     CU_ASSERT_EQUAL(pe->dosHeader->e_magic, IMAGE_DOS_SIGNATURE);
     CU_ASSERT_EQUAL(pe->dosHeader->e_lfanew, 0xC0);
     CU_ASSERT_EQUAL(((DWORD)pe->lpDosStubAddress), 

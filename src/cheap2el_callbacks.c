@@ -38,13 +38,13 @@ cheap2el_callback_update_base_relocations(
     WORD wbuf, br_type, br_offset;
     int i;
     PWORD tofs = bre->TypeOffset;
-    BOOL isActualUpper = pe->dwActualImageBase > pe->ntHeaders->OptionalHeader.ImageBase;
+    BOOL isActualUpper = pe->dwPseudoImageBase > pe->ntHeaders->OptionalHeader.ImageBase;
 
     // DWORD = "unsigned" long adjustment
     if (isActualUpper) {
-        diff = pe->dwActualImageBase - pe->ntHeaders->OptionalHeader.ImageBase;
+        diff = pe->dwPseudoImageBase - pe->ntHeaders->OptionalHeader.ImageBase;
     } else {
-        diff = pe->ntHeaders->OptionalHeader.ImageBase - pe->dwActualImageBase;
+        diff = pe->ntHeaders->OptionalHeader.ImageBase - pe->dwPseudoImageBase;
     }
     for (i = 0; i < bre->NumberOfTypeOffset; i++, tofs++) {
         wbuf = *tofs;
