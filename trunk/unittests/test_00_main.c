@@ -107,12 +107,14 @@ CU_TestInfo tests_enumerator[] = {
 
 extern void test_callback_update_base_relocations1(void);
 extern void test_callback_update_base_relocations2(void);
+extern void test_callback_update_base_relocations3(void);
 extern void test_callback_resolve_imports(void);
 extern void test_pseudo_load(void);
 
 CU_TestInfo tests_callbacks[] = {
     {"test_callback_update_base_relocations1", test_callback_update_base_relocations1},
     {"test_callback_update_base_relocations2", test_callback_update_base_relocations2},
+    {"test_callback_update_base_relocations3", test_callback_update_base_relocations3},
     {"test_callback_resolve_imports", test_callback_resolve_imports},
     {"test_pseudo_load", test_pseudo_load},
     CU_TEST_INFO_NULL,

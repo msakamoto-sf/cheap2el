@@ -100,6 +100,7 @@ _cheap2el_map_headers_from_memory(
     }
 
     pe->dwActualImageBase = (DWORD)lpMemoryBuffer;
+    pe->dwPseudoImageBase = (DWORD)lpMemoryBuffer;
     pe->dosHeader = (PIMAGE_DOS_HEADER)lpMemoryBuffer;
     dwptr1 = (DWORD)(pe->dosHeader);
     dwptr2 = dwptr1 + sizeof(IMAGE_DOS_HEADER);
