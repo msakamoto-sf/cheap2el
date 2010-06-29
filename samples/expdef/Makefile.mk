@@ -8,11 +8,10 @@ TARGET=$(PROJNAME).exe
 OBJS=$(PROJNAME).obj
 
 !include <..\..\common.mk>
-
-CFLAGS=$(CFLAGS) /I ..\..\header
+!include <..\common.mk>
 
 $(TARGET):$(OBJS)
-	$(CC) $(CFLAGS) /Fe$(TARGET) $(OBJS) libcunit.lib ..\..\cheap2el.lib /link $(LFLAGS)
+	$(CC) $(CFLAGS) /Fe$(TARGET) $(OBJS) $(CHEAP2EL_LIB) /link $(LFLAGS)
 
 clean:
 	del *.exe *.obj
