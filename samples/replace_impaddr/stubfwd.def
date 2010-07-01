@@ -1,0 +1,4 @@
+LIBRARY stubfwd.dll
+EXPORTS
+    func1
+    func2 = user32.MessageBoxA
