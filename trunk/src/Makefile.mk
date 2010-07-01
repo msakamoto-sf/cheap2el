@@ -16,7 +16,7 @@ OBJS=$(PROJNAME)_mapper.obj \
 CFLAGS=$(CFLAGS) /I ..\header
 
 $(TARGET):$(OBJS)
-	lib /out:$(TARGET) $(OBJS)
+	lib /nologo /out:$(TARGET) $(OBJS)
 
 clean:
 	del *.obj

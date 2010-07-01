@@ -20,7 +20,8 @@ files in C/C++ programming language.
 
 a) open your visual studio command prompt.
 b) cd to this directory.
-c) do "nmake -f Makefile.mk"
+c) do "nmake -f Makefile.mk" (library only)
+   or "nmake -f Makefile.mk test" (library and unittests)
 
 If all works fine, "cheap2el.lib" will be found in this directory.
 
