@@ -1,0 +1,3 @@
+LIBRARY src_dll.dll
+EXPORTS
+    msgbox_thread
