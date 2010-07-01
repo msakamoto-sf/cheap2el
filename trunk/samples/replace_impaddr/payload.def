@@ -1,0 +1,4 @@
+LIBRARY hook.dll
+EXPORTS
+    MyKeyboardProc
+    SetMyKeyboardProcTarget
