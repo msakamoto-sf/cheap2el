@@ -33,7 +33,7 @@ extern "C" {
 /* architecture version */
 #define CHEAP2EL_VERSION_MAJOR (1)
 /* interface version */
-#define CHEAP2EL_VERSION_MINOR (1)
+#define CHEAP2EL_VERSION_MINOR (2)
 /* implementation version */
 #define CHEAP2EL_VERSION_RELEASE (1)
 
@@ -285,6 +285,35 @@ cheap2el_pseudo_load_address_resolver(
     PCHEAP2EL_PE_IMAGE pe,
     PCHEAP2EL_CALLBACK_RESOLVE_IMPORTS_ARG arg
     );
+
+typedef struct _CHEAP2EL_COFF_OBJ {
+    DWORD dwBase;
+    PIMAGE_FILE_HEADER fileHeader;
+    PIMAGE_SECTION_HEADER sectionHeaders;
+    PIMAGE_SYMBOL symbolTable;
+} CHEAP2EL_COFF_OBJ, *PCHEAP2EL_COFF_OBJ;
+
+PCHEAP2EL_COFF_OBJ
+cheap2el_coff_obj_map_from_memory(
+        LPVOID lpvMemoryBuffer,
+        CHEAP2EL_ERROR_CODE *err
+        );
+
+typedef BOOL (*CHEAP2EL_COFF_OBJ_ENUM_RELOCATION_CALLBACK)(
+        PCHEAP2EL_COFF_OBJ coff,
+        PIMAGE_SECTION_HEADER sect,
+        PIMAGE_RELOCATION reloc,
+        int order,
+        LPVOID lpApplicationData
+        );
+
+int
+cheap2el_coff_obj_enumerate_relocations(
+        PCHEAP2EL_COFF_OBJ coff,
+        PIMAGE_SECTION_HEADER sect,
+        CHEAP2EL_COFF_OBJ_ENUM_RELOCATION_CALLBACK cb,
+        LPVOID lpApplicationData
+        );
 
 #ifdef __cplusplus
 }
