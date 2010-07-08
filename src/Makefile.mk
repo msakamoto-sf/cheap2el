@@ -9,7 +9,8 @@ TARGET=..\$(PROJNAME).lib
 OBJS=$(PROJNAME)_mapper.obj \
      $(PROJNAME)_enumerator.obj \
      $(PROJNAME)_callbacks.obj \
-     $(PROJNAME)_version.obj
+     $(PROJNAME)_version.obj \
+     $(PROJNAME)_coff_obj.obj
 
 !include <..\common.mk>
 

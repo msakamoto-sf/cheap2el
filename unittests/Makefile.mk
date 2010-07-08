@@ -10,7 +10,8 @@ OBJS=test_00_main.obj \
      test_mapper.obj \
      test_enumerator.obj \
      test_callbacks.obj \
-     test_version.obj
+     test_version.obj \
+     test_coff_obj.obj
 
 !include <..\common.mk>
 

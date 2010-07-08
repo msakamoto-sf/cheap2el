@@ -131,12 +131,27 @@ CU_TestInfo tests_version[] = {
 };
 
 // }}}
+// {{{ CU_TestInfo tests_coff_obj[] and externs
+
+extern void test_coff_obj_map_from_memory(void);
+extern void test_coff_obj_walkthrough_sections(void);
+extern void test_coff_obj_enumerate_relocations(void);
+
+CU_TestInfo tests_coff_obj[] = {
+    {"test_coff_obj_map_from_memory", test_coff_obj_map_from_memory},
+    {"test_coff_obj_walkthrough_sections", test_coff_obj_walkthrough_sections},
+    {"test_coff_obj_enumerate_relocations", test_coff_obj_enumerate_relocations},
+    CU_TEST_INFO_NULL,
+};
+
+// }}}
 
 CU_SuiteInfo suites[] = {
     {"cheap2el_mapper", NULL, NULL, tests_mapper},
     {"cheap2el_enumerator", NULL, NULL, tests_enumerator},
     {"cheap2el_callbacks", NULL, NULL, tests_callbacks},
     {"cheap2el_version", NULL, NULL, tests_version},
+    {"cheap2el_coff_obj", NULL, NULL, tests_coff_obj},
     CU_SUITE_INFO_NULL,
 };
 
