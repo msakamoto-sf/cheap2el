@@ -136,11 +136,13 @@ CU_TestInfo tests_version[] = {
 extern void test_coff_obj_map_from_memory(void);
 extern void test_coff_obj_walkthrough_sections(void);
 extern void test_coff_obj_enumerate_relocations(void);
+extern void test_coff_obj_enumerate_symbols(void);
 
 CU_TestInfo tests_coff_obj[] = {
     {"test_coff_obj_map_from_memory", test_coff_obj_map_from_memory},
     {"test_coff_obj_walkthrough_sections", test_coff_obj_walkthrough_sections},
     {"test_coff_obj_enumerate_relocations", test_coff_obj_enumerate_relocations},
+    {"test_coff_obj_enumerate_symbols", test_coff_obj_enumerate_symbols},
     CU_TEST_INFO_NULL,
 };
 
