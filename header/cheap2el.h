@@ -315,6 +315,22 @@ cheap2el_coff_obj_enumerate_relocations(
         LPVOID lpApplicationData
         );
 
+typedef BOOL (*CHEAP2EL_COFF_OBJ_ENUM_SYMBOL_CALLBACK)(
+        PCHEAP2EL_COFF_OBJ coff,
+        PIMAGE_SYMBOL symbol,
+        char *sz_symname,
+        PIMAGE_AUX_SYMBOL aux_head,
+        int order,
+        LPVOID lpApplicationData
+        );
+
+int
+cheap2el_coff_obj_enumerate_symbols(
+        PCHEAP2EL_COFF_OBJ coff,
+        CHEAP2EL_COFF_OBJ_ENUM_SYMBOL_CALLBACK cb,
+        LPVOID lpApplicationData
+        );
+
 #ifdef __cplusplus
 }
 #endif

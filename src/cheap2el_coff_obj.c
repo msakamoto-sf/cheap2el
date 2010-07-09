@@ -92,3 +92,59 @@ cheap2el_coff_obj_enumerate_relocations(
 }
 
 // }}}
+// {{{ cheap2el_coff_obj_enumerate_symbols()
+
+int
+cheap2el_coff_obj_enumerate_symbols(
+        PCHEAP2EL_COFF_OBJ coff,
+        CHEAP2EL_COFF_OBJ_ENUM_SYMBOL_CALLBACK cb,
+        LPVOID lpApplicationData
+        )
+{
+    int sym_cnt, result, i;
+    PIMAGE_SYMBOL symbol = NULL;
+    PIMAGE_AUX_SYMBOL aux_head = NULL;
+    DWORD dwptr = 0, dwbuf = 0;
+    DWORD dwStringTable;
+    char sz_symname[9];
+    char *symname;
+
+    if (NULL == cb) {
+        return 0;
+    }
+
+    dwptr = coff->dwBase + coff->fileHeader->PointerToSymbolTable;
+    symbol = (PIMAGE_SYMBOL)dwptr;
+    dwStringTable = dwptr + 
+        sizeof(IMAGE_SYMBOL) * coff->fileHeader->NumberOfSymbols;
+    sym_cnt = 0;
+    result = 0;
+    while (sym_cnt < coff->fileHeader->NumberOfSymbols) {
+        aux_head = NULL;
+        ZeroMemory(sz_symname, 9);
+        if (0 != symbol->N.Name.Short) {
+            strncpy(sz_symname, symbol->N.ShortName, 8);
+            symname = sz_symname;
+        } else {
+            dwptr = symbol->N.Name.Long + dwStringTable;
+            symname = (char*)dwptr;
+        }
+        if (0 != symbol->NumberOfAuxSymbols) {
+            dwptr = (DWORD)symbol + sizeof(IMAGE_SYMBOL);
+            aux_head = (PIMAGE_AUX_SYMBOL)dwptr;
+        }
+        if (NULL != cb && 
+                cb(coff, symbol, symname, aux_head, result, lpApplicationData)) {
+            result++;
+            break;
+        }
+        result++;
+        dwbuf = symbol->NumberOfAuxSymbols;
+        symbol++;
+        sym_cnt++;
+        for (i = 0; i < dwbuf; i++, symbol++, sym_cnt++);
+    }
+    return result;
+}
+
+// }}}
