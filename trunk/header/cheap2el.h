@@ -51,7 +51,8 @@ typedef enum _CHEAP2EL_ERROR_CODE {
     CHEAP2EL_EC_MEMORY_ALLOC,
     CHEAP2EL_EC_LACK_OF_MEMORY_BUFFER,
     CHEAP2EL_EC_LOAD_LIBRARY_FAILURE,
-    CHEAP2EL_EC_GET_PROCADDRESS_FAILURE
+    CHEAP2EL_EC_GET_PROCADDRESS_FAILURE,
+    CHEAP2EL_EC_NOT_LIB_SIGNATURE
 } CHEAP2EL_ERROR_CODE;
 
 typedef struct _CHEAP2EL_PE_IMAGE {
@@ -329,6 +330,17 @@ cheap2el_coff_obj_enumerate_symbols(
         PCHEAP2EL_COFF_OBJ coff,
         CHEAP2EL_COFF_OBJ_ENUM_SYMBOL_CALLBACK cb,
         LPVOID lpApplicationData
+        );
+
+typedef struct _CHEAP2EL_COFF_LIB {
+    DWORD dwBase;
+    PIMAGE_ARCHIVE_MEMBER_HEADER head;
+} CHEAP2EL_COFF_LIB, *PCHEAP2EL_COFF_LIB;
+
+PCHEAP2EL_COFF_LIB
+cheap2el_coff_lib_map_from_memory(
+        LPVOID lpvMemoryBuffer,
+        CHEAP2EL_ERROR_CODE *err
         );
 
 #ifdef __cplusplus

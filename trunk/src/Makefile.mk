@@ -10,7 +10,8 @@ OBJS=$(PROJNAME)_mapper.obj \
      $(PROJNAME)_enumerator.obj \
      $(PROJNAME)_callbacks.obj \
      $(PROJNAME)_version.obj \
-     $(PROJNAME)_coff_obj.obj
+     $(PROJNAME)_coff_obj.obj \
+     $(PROJNAME)_coff_lib.obj
 
 !include <..\common.mk>
 
