@@ -22,7 +22,60 @@
 
 #include "cheap2el.h"
 #include <windows.h>
+#include <shlwapi.h>
+#pragma comment(lib, "shlwapi.lib")
 
+// {{{ _cheap2el_coff_lib_adjust_amh_offset
+
+static DWORD
+_cheap2el_coff_lib_adjust_amh_offset(
+        DWORD offset
+        )
+{
+    // align to 2 byte border.
+    if (offset % 2) {
+        return offset + 1;
+    } else {
+        return offset;
+    }
+}
+
+// }}}
+// {{{ cheap2el_coff_lib_get_am_size()
+
+int
+cheap2el_coff_lib_get_am_size(
+        PIMAGE_ARCHIVE_MEMBER_HEADER amh
+        )
+{
+    BYTE szSize[11];
+    ZeroMemory(szSize, sizeof(szSize));
+
+    memcpy(szSize, amh->Size, sizeof(szSize) - 1);
+    StrTrimA(szSize, CHEAP2EL_COFF_LIB_AM_PADDING);
+    return StrToIntA(szSize);
+}
+
+// }}}
+// {{{ cheap2el_coff_lib_get_longname_offset()
+
+int
+cheap2el_coff_lib_get_longname_offset(
+        const BYTE *Name
+        )
+{
+    BYTE szName[17];
+    ZeroMemory(szName, sizeof(szName));
+
+    if (CHEAP2EL_COFF_LIB_AM_SPCHAR != Name[0]) {
+        return 0;
+    }
+    memcpy(szName, Name, sizeof(szName) - 1);
+    StrTrimA(szName, CHEAP2EL_COFF_LIB_AM_SPSTR CHEAP2EL_COFF_LIB_AM_PADDING);
+    return StrToIntA(szName);
+}
+
+// }}}
 // {{{ cheap2el_coff_lib_map_from_memory()
 
 PCHEAP2EL_COFF_LIB
@@ -32,9 +85,15 @@ cheap2el_coff_lib_map_from_memory(
         )
 {
     PCHEAP2EL_COFF_LIB lib = NULL;
-    PIMAGE_ARCHIVE_MEMBER_HEADER am_head = NULL;
+    PIMAGE_ARCHIVE_MEMBER_HEADER amh = NULL;
     char *signature = NULL;
     DWORD dwptr1, dwptr2;
+    BYTE szSize[11];
+    size_t size;
+
+    DWORD dwptr = 0;
+    BYTE szName[17];
+    LPVOID lpvMember;
 
     if (NULL == lpvMemoryBuffer) {
         *err = CHEAP2EL_EC_LACK_OF_MEMORY_BUFFER;
@@ -49,103 +108,128 @@ cheap2el_coff_lib_map_from_memory(
 
     lib->dwBase = (DWORD)lpvMemoryBuffer;
     signature = (char*)lpvMemoryBuffer;
-    if (strcmp(IMAGE_ARCHIVE_START, signature)) {
+    if (strncmp(IMAGE_ARCHIVE_START, signature, IMAGE_ARCHIVE_START_SIZE)) {
         *err = CHEAP2EL_EC_NOT_LIB_SIGNATURE;
         return NULL;
     }
+
+    // 1st linker member
     dwptr1 = lib->dwBase + IMAGE_ARCHIVE_START_SIZE;
-    am_head = (PIMAGE_ARCHIVE_MEMBER_HEADER)dwptr1;
+    amh = (PIMAGE_ARCHIVE_MEMBER_HEADER)dwptr1;
+    if (CHEAP2EL_COFF_LIB_AM_SPCHAR == amh->Name[0] &&
+        CHEAP2EL_COFF_LIB_AM_PADDING_CHAR == amh->Name[1]) {
+        lib->amh_linker1 = amh;
+        dwptr1 += IMAGE_SIZEOF_ARCHIVE_MEMBER_HDR;
+        lib->am_linker1 = (LPVOID)dwptr1;
+    } else {
+        *err = CHEAP2EL_EC_NOT_VALID_COFF_LIB;
+        return NULL;
+    }
+
+    // 2nd linker member
+    size = cheap2el_coff_lib_get_am_size(amh);
+    dwptr1 = _cheap2el_coff_lib_adjust_amh_offset(dwptr1 + size);
+    amh = (PIMAGE_ARCHIVE_MEMBER_HEADER)dwptr1;
+    if (CHEAP2EL_COFF_LIB_AM_SPCHAR == amh->Name[0] &&
+        CHEAP2EL_COFF_LIB_AM_PADDING_CHAR == amh->Name[1]) {
+        lib->amh_linker2 = amh;
+        dwptr1 += IMAGE_SIZEOF_ARCHIVE_MEMBER_HDR;
+        lib->am_linker2 = (LPVOID)dwptr1;
+    } else {
+        *err = CHEAP2EL_EC_NOT_VALID_COFF_LIB;
+        return NULL;
+    }
+
+    // longname member
+    size = cheap2el_coff_lib_get_am_size(amh);
+    dwptr1 = _cheap2el_coff_lib_adjust_amh_offset(dwptr1 + size);
+    amh = (PIMAGE_ARCHIVE_MEMBER_HEADER)dwptr1;
+    if (CHEAP2EL_COFF_LIB_AM_SPCHAR == amh->Name[0] &&
+        CHEAP2EL_COFF_LIB_AM_SPCHAR == amh->Name[1] &&
+        CHEAP2EL_COFF_LIB_AM_PADDING_CHAR == amh->Name[2]) {
+        lib->amh_longname = amh;
+        dwptr1 += IMAGE_SIZEOF_ARCHIVE_MEMBER_HDR;
+        lib->am_longname = (LPVOID)dwptr1;
+    } else {
+        *err = CHEAP2EL_EC_NOT_VALID_COFF_LIB;
+        return NULL;
+    }
+
+    // head of object file members
+    size = cheap2el_coff_lib_get_am_size(amh);
+    dwptr1 = _cheap2el_coff_lib_adjust_amh_offset(dwptr1 + size);
+    amh = (PIMAGE_ARCHIVE_MEMBER_HEADER)dwptr1;
+    lib->amh_objects = amh;
+
     return lib;
 }
 
 // }}}
-// {{{ cheap2el_coff_lib_enumerate_relocations()
+// {{{ cheap2el_coff_lib_enumerate_members()
 
 int
-cheap2el_coff_lib_enumerate_relocations(
-        PCHEAP2EL_COFF_OBJ coff,
-        PIMAGE_SECTION_HEADER sect,
-        CHEAP2EL_COFF_OBJ_ENUM_RELOCATION_CALLBACK cb,
+cheap2el_coff_lib_enumerate_members(
+        PCHEAP2EL_COFF_LIB lib,
+        CHEAP2EL_COFF_LIB_ENUM_MEMBER_CALLBACK cb,
         LPVOID lpApplicationData
         )
 {
     int result = 0;
-    PIMAGE_RELOCATION reloc = NULL;
-    DWORD dwptr = 0;
+    PIMAGE_ARCHIVE_MEMBER_HEADER amh = NULL;
+    DWORD dwptr = 0, dwptr2;
+    BYTE szName[17];
+    LPVOID lpvMember;
+    int longname_offset;
+    char *szLongName;
+    size_t size;
 
     if (NULL == cb) {
         return 0;
     }
 
-    dwptr = coff->dwBase + sect->PointerToRelocations;
-    reloc = (PIMAGE_RELOCATION)dwptr;
-    for (result = 0;
-            result != sect->NumberOfRelocations;
-            result++, reloc++) {
-        if (NULL != cb && 
-                cb(coff, sect, reloc, result, lpApplicationData)) {
-            result++;
-            break;
-        }
-    }
-    return result;
-}
-
-// }}}
-// {{{ cheap2el_coff_lib_enumerate_symbols()
-
-int
-cheap2el_coff_lib_enumerate_symbols(
-        PCHEAP2EL_COFF_OBJ coff,
-        CHEAP2EL_COFF_OBJ_ENUM_SYMBOL_CALLBACK cb,
-        LPVOID lpApplicationData
-        )
-{
-    int sym_cnt, result, i;
-    PIMAGE_SYMBOL symbol = NULL;
-    PIMAGE_AUX_SYMBOL aux_head = NULL;
-    DWORD dwptr = 0, dwbuf = 0;
-    DWORD dwStringTable;
-    char sz_symname[9];
-    char *symname;
-
-    if (NULL == cb) {
-        return 0;
-    }
-
-    dwptr = coff->dwBase + coff->fileHeader->PointerToSymbolTable;
-    symbol = (PIMAGE_SYMBOL)dwptr;
-    dwStringTable = dwptr + 
-        sizeof(IMAGE_SYMBOL) * coff->fileHeader->NumberOfSymbols;
-    sym_cnt = 0;
+    amh = lib->amh_objects;
     result = 0;
-    while (sym_cnt < coff->fileHeader->NumberOfSymbols) {
-        aux_head = NULL;
-        ZeroMemory(sz_symname, 9);
-        if (0 != symbol->N.Name.Short) {
-            strncpy(sz_symname, symbol->N.ShortName, 8);
-            symname = sz_symname;
+    while (!strncmp(amh->EndHeader, IMAGE_ARCHIVE_END, 2)) {
+        dwptr = (DWORD)amh;
+        dwptr += IMAGE_SIZEOF_ARCHIVE_MEMBER_HDR;
+        ZeroMemory(szName, sizeof(szName));
+
+        if (CHEAP2EL_COFF_LIB_AM_SPCHAR != amh->Name[0]) {
+            memcpy(szName, amh->Name, sizeof(szName) - 1);
+            StrTrimA(szName, 
+                    CHEAP2EL_COFF_LIB_AM_SPSTR CHEAP2EL_COFF_LIB_AM_PADDING);
+            szLongName = szName;
         } else {
-            dwptr = symbol->N.Name.Long + dwStringTable;
-            symname = (char*)dwptr;
+            longname_offset = cheap2el_coff_lib_get_longname_offset(amh->Name);
+            dwptr2 = (DWORD)lib->am_longname;
+            dwptr2 += longname_offset;
+            szLongName = (char*)dwptr2;
         }
-        if (0 != symbol->NumberOfAuxSymbols) {
-            dwptr = (DWORD)symbol + sizeof(IMAGE_SYMBOL);
-            aux_head = (PIMAGE_AUX_SYMBOL)dwptr;
-        }
+
+        size = cheap2el_coff_lib_get_am_size(amh);
         if (NULL != cb && 
-                cb(coff, symbol, symname, aux_head, result, lpApplicationData)) {
+                cb(lib, amh, szLongName, (LPVOID)dwptr, size, result, lpApplicationData)) {
             result++;
             break;
         }
         result++;
-        dwbuf = symbol->NumberOfAuxSymbols;
-        symbol++;
-        sym_cnt++;
-        for (i = 0; i < dwbuf; i++, symbol++, sym_cnt++);
+        dwptr = _cheap2el_coff_lib_adjust_amh_offset(dwptr + size);
+        amh = (PIMAGE_ARCHIVE_MEMBER_HEADER)dwptr;
     }
+
     return result;
 }
 
 // }}}
 
+/**
+ * Local Variables:
+ * mode: php
+ * coding: iso-8859-1
+ * tab-width: 4
+ * c-basic-offset: 4
+ * c-hanging-comment-ender-p: nil
+ * indent-tabs-mode: nil
+ * End:
+ * vim: set expandtab tabstop=4 shiftwidth=4:
+ */

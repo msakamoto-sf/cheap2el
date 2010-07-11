@@ -147,6 +147,24 @@ CU_TestInfo tests_coff_obj[] = {
 };
 
 // }}}
+// {{{ CU_TestInfo tests_coff_lib[] and externs
+
+extern void test_coff_lib_get_am_size(void);
+extern void test_coff_lib_get_longname_offset(void);
+extern void test_coff_lib_map_from_memory(void);
+extern void test_coff_lib_map_from_memory_3h(void);
+extern void test_coff_lib_enumerate_members(void);
+
+CU_TestInfo tests_coff_lib[] = {
+    {"test_coff_lib_get_am_size", test_coff_lib_get_am_size},
+    {"test_coff_lib_get_longname_offset", test_coff_lib_get_longname_offset},
+    {"test_coff_lib_map_from_memory", test_coff_lib_map_from_memory},
+    {"test_coff_lib_map_from_memory_3h", test_coff_lib_map_from_memory_3h},
+    {"test_coff_lib_enumerate_members", test_coff_lib_enumerate_members},
+    CU_TEST_INFO_NULL,
+};
+
+// }}}
 
 CU_SuiteInfo suites[] = {
     {"cheap2el_mapper", NULL, NULL, tests_mapper},
@@ -154,6 +172,7 @@ CU_SuiteInfo suites[] = {
     {"cheap2el_callbacks", NULL, NULL, tests_callbacks},
     {"cheap2el_version", NULL, NULL, tests_version},
     {"cheap2el_coff_obj", NULL, NULL, tests_coff_obj},
+    {"cheap2el_coff_lib", NULL, NULL, tests_coff_lib},
     CU_SUITE_INFO_NULL,
 };
 
@@ -179,3 +198,15 @@ int main(int argc, char *argv[])
     CU_cleanup_registry();
     return 0;
 }
+
+/**
+ * Local Variables:
+ * mode: php
+ * coding: iso-8859-1
+ * tab-width: 4
+ * c-basic-offset: 4
+ * c-hanging-comment-ender-p: nil
+ * indent-tabs-mode: nil
+ * End:
+ * vim: set expandtab tabstop=4 shiftwidth=4:
+ */

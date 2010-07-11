@@ -52,7 +52,8 @@ typedef enum _CHEAP2EL_ERROR_CODE {
     CHEAP2EL_EC_LACK_OF_MEMORY_BUFFER,
     CHEAP2EL_EC_LOAD_LIBRARY_FAILURE,
     CHEAP2EL_EC_GET_PROCADDRESS_FAILURE,
-    CHEAP2EL_EC_NOT_LIB_SIGNATURE
+    CHEAP2EL_EC_NOT_LIB_SIGNATURE,
+    CHEAP2EL_EC_NOT_VALID_COFF_LIB
 } CHEAP2EL_ERROR_CODE;
 
 typedef struct _CHEAP2EL_PE_IMAGE {
@@ -332,9 +333,25 @@ cheap2el_coff_obj_enumerate_symbols(
         LPVOID lpApplicationData
         );
 
+#define CHEAP2EL_COFF_LIB_AM_SPCHAR ('/')
+#define CHEAP2EL_COFF_LIB_AM_SPSTR "/"
+#define CHEAP2EL_COFF_LIB_AM_PADDING " "
+#define CHEAP2EL_COFF_LIB_AM_PADDING_CHAR (' ')
+
+int
+cheap2el_coff_lib_get_am_size(
+        PIMAGE_ARCHIVE_MEMBER_HEADER amh
+        );
+
 typedef struct _CHEAP2EL_COFF_LIB {
     DWORD dwBase;
-    PIMAGE_ARCHIVE_MEMBER_HEADER head;
+    PIMAGE_ARCHIVE_MEMBER_HEADER amh_linker1;
+    LPVOID am_linker1;
+    PIMAGE_ARCHIVE_MEMBER_HEADER amh_linker2;
+    LPVOID am_linker2;
+    PIMAGE_ARCHIVE_MEMBER_HEADER amh_longname;
+    LPVOID am_longname;
+    PIMAGE_ARCHIVE_MEMBER_HEADER amh_objects;
 } CHEAP2EL_COFF_LIB, *PCHEAP2EL_COFF_LIB;
 
 PCHEAP2EL_COFF_LIB
@@ -343,7 +360,36 @@ cheap2el_coff_lib_map_from_memory(
         CHEAP2EL_ERROR_CODE *err
         );
 
+typedef BOOL (*CHEAP2EL_COFF_LIB_ENUM_MEMBER_CALLBACK)(
+        PCHEAP2EL_COFF_LIB lib,
+        PIMAGE_ARCHIVE_MEMBER_HEADER amh,
+        char *sz_longname,
+        LPVOID member,
+        size_t size,
+        int order,
+        LPVOID lpApplicationData
+        );
+
+int
+cheap2el_coff_lib_enumerate_members(
+        PCHEAP2EL_COFF_LIB lib,
+        CHEAP2EL_COFF_LIB_ENUM_MEMBER_CALLBACK cb,
+        LPVOID lpApplicationData
+        );
+
 #ifdef __cplusplus
 }
 #endif
 #endif  /* CHEAP2EL_H */
+
+/**
+ * Local Variables:
+ * mode: c++
+ * coding: iso-8859-1
+ * tab-width: 4
+ * c-basic-offset: 4
+ * c-hanging-comment-ender-p: nil
+ * indent-tabs-mode: nil
+ * End:
+ * vim: set expandtab tabstop=4 shiftwidth=4:
+ */
