@@ -153,14 +153,18 @@ extern void test_coff_lib_get_am_size(void);
 extern void test_coff_lib_get_longname_offset(void);
 extern void test_coff_lib_map_from_memory(void);
 extern void test_coff_lib_map_from_memory_3h(void);
+extern void test_coff_lib_map_nolongname(void);
 extern void test_coff_lib_enumerate_members(void);
+extern void test_coff_lib_enumerate_symbolsN(void);
 
 CU_TestInfo tests_coff_lib[] = {
     {"test_coff_lib_get_am_size", test_coff_lib_get_am_size},
     {"test_coff_lib_get_longname_offset", test_coff_lib_get_longname_offset},
     {"test_coff_lib_map_from_memory", test_coff_lib_map_from_memory},
     {"test_coff_lib_map_from_memory_3h", test_coff_lib_map_from_memory_3h},
+    {"test_coff_lib_map_nolongname", test_coff_lib_map_nolongname},
     {"test_coff_lib_enumerate_members", test_coff_lib_enumerate_members},
+    {"test_coff_lib_enumerate_symbolsN", test_coff_lib_enumerate_symbolsN},
     CU_TEST_INFO_NULL,
 };
 

@@ -198,8 +198,9 @@ void test_coff_lib_map_from_memory_3h(void)
 
     lib = NULL; err = 0;
     lib = cheap2el_coff_lib_map_from_memory(data[2], &err);
-    CU_ASSERT_PTR_NULL(lib);
-    CU_ASSERT_EQUAL(err, CHEAP2EL_EC_NOT_VALID_COFF_LIB);
+    CU_ASSERT_PTR_NOT_NULL(lib);
+    CU_ASSERT_EQUAL(err, 0);
+    CU_ASSERT_FALSE(memcmp("!  ", lib->amh_objects->Name, 3));
 
     lib = NULL; err = 0;
     lib = cheap2el_coff_lib_map_from_memory(data[3], &err);
@@ -211,6 +212,42 @@ void test_coff_lib_map_from_memory_3h(void)
     CU_ASSERT_FALSE(memcmp("a", lib->am_linker1, 1));
     CU_ASSERT_FALSE(memcmp("\x00\x00", lib->am_linker2, 2));
     CU_ASSERT_FALSE(memcmp("def", lib->am_longname, 3));
+}
+
+// }}}
+// {{{ test_coff_lib_map_nolongname()
+
+void test_coff_lib_map_nolongname(void)
+{
+    PCHEAP2EL_COFF_LIB lib = NULL;
+    LPVOID lpvBuffer = NULL;
+    CHEAP2EL_ERROR_CODE err = 0;
+
+    // loadding and mapping test data
+    lpvBuffer = _load_test_data("datafiles\\pe_normal32_lib02.lib");
+    if (NULL == lpvBuffer) {
+        CU_FAIL("load error");
+        return;
+    }
+    lib = cheap2el_coff_lib_map_from_memory(lpvBuffer, &err);
+    CU_ASSERT_PTR_NOT_NULL(lib);
+    CU_ASSERT_EQUAL(err, 0);
+
+    CU_ASSERT_EQUAL(lib->dwBase, (DWORD)lpvBuffer);
+    CU_ASSERT_EQUAL((DWORD)(lib->amh_linker1), 
+            lib->dwBase + IMAGE_ARCHIVE_START_SIZE);
+
+    CU_ASSERT_EQUAL(lib->linker2.NumberOfMembers, 2);
+    CU_ASSERT_EQUAL(lib->linker2.NumberOfSymbols, 4);
+
+    // longname should be empty.
+    CU_ASSERT_PTR_NULL(lib->amh_longname);
+    CU_ASSERT_PTR_NULL(lib->am_longname);
+
+    CU_ASSERT_FALSE(memcmp("b.obj/", lib->amh_objects->Name, 6));
+
+    GlobalFree(lib);
+    GlobalFree(lpvBuffer);
 }
 
 // }}}
@@ -285,6 +322,93 @@ void test_coff_lib_enumerate_members(void)
 
     // no callback
     result = cheap2el_coff_lib_enumerate_members(lib, NULL, (LPVOID)NULL);
+    CU_ASSERT_FALSE(result);
+
+    GlobalFree(lib);
+    GlobalFree(lpvBuffer);
+}
+
+// }}}
+// {{{ test_coff_lib_enumerate_symbolsN()
+
+static BOOL
+_test_coff_lib_enumerate_symbols_cbN(
+        PCHEAP2EL_COFF_LIB lib,
+        char *sz_symname,
+        PIMAGE_ARCHIVE_MEMBER_HEADER amh,
+        char *sz_longname,
+        LPVOID member,
+        size_t size,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    int *when_return_true  = (int*)lpApplicationData;
+    struct {
+        BYTE on[16];
+        char *ln;
+        int sz;
+        char *sym;
+    } expected[] = {
+        {"source_foo1.obj/", "source_foo1.obj", 640, "_ifunc1"},
+        {"/18             ", "source_foo12.obj", 640, "_ifunc12"},
+        {"/0              ", "source_foo123.obj", 650, "_ifunc123"},
+        {"a.obj/          ", "a.obj", 710, "_ifuncA12345678901234567890"},
+        {"source_foo1.obj/", "source_foo1.obj", 640, "_ivar1"},
+        {"/18             ", "source_foo12.obj", 640, "_ivar12"},
+        {"/0              ", "source_foo123.obj", 650, "_ivar123"},
+        {"a.obj/          ", "a.obj", 710, "_ivarA12345678901234567890"}
+    };
+
+    if (order == *when_return_true) {
+        return TRUE;
+    }
+
+    CU_ASSERT_STRING_EQUAL(sz_symname, expected[order].sym);
+    CU_ASSERT_FALSE(memcmp(amh->Name, expected[order].on, 1));
+    CU_ASSERT_STRING_EQUAL(sz_longname, expected[order].ln);
+    CU_ASSERT_EQUAL(size, expected[order].sz);
+
+//    printf("[%s], %s\n", sz_symname, sz_longname);
+    return FALSE;
+}
+
+void test_coff_lib_enumerate_symbolsN(void)
+{
+    PCHEAP2EL_COFF_LIB lib = NULL;
+    LPVOID lpvBuffer = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    int i, result = 0, appdata;
+
+    // loadding and mapping test data
+    lpvBuffer = _load_test_data("datafiles\\pe_normal32_lib01.lib");
+    if (NULL == lpvBuffer) {
+        CU_FAIL("load error");
+        return;
+    }
+    err = 0;
+    lib = cheap2el_coff_lib_map_from_memory(lpvBuffer, &err);
+
+    // callback return false
+    appdata = -1;
+    result = cheap2el_coff_lib_enumerate_symbols(lib,
+            _test_coff_lib_enumerate_symbols_cbN, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 8);
+
+    // callback return true (1st entry)
+    appdata = 0;
+    result = cheap2el_coff_lib_enumerate_symbols(lib,
+            _test_coff_lib_enumerate_symbols_cbN, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // callback return true (2nd entry)
+    appdata = 1;
+    result = cheap2el_coff_lib_enumerate_symbols(lib,
+            _test_coff_lib_enumerate_symbols_cbN, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 2);
+
+    // no callback
+    result = cheap2el_coff_lib_enumerate_symbols(lib, NULL, (LPVOID)NULL);
     CU_ASSERT_FALSE(result);
 
     GlobalFree(lib);

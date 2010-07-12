@@ -185,19 +185,24 @@ cheap2el_coff_lib_map_from_memory(
     if (CHEAP2EL_COFF_LIB_AM_SPCHAR == amh->Name[0] &&
         CHEAP2EL_COFF_LIB_AM_SPCHAR == amh->Name[1] &&
         CHEAP2EL_COFF_LIB_AM_PADDING_CHAR == amh->Name[2]) {
+
+        // longname member
         lib->amh_longname = amh;
         dwptr1 += IMAGE_SIZEOF_ARCHIVE_MEMBER_HDR;
         lib->am_longname = (LPVOID)dwptr1;
-    } else {
-        *err = CHEAP2EL_EC_NOT_VALID_COFF_LIB;
-        return NULL;
-    }
 
-    // head of object file members
-    size = cheap2el_coff_lib_get_am_size(amh);
-    dwptr1 = _cheap2el_coff_lib_adjust_amh_offset(dwptr1 + size);
-    amh = (PIMAGE_ARCHIVE_MEMBER_HEADER)dwptr1;
-    lib->amh_objects = amh;
+        // head of object file members
+        size = cheap2el_coff_lib_get_am_size(amh);
+        dwptr1 = _cheap2el_coff_lib_adjust_amh_offset(dwptr1 + size);
+        amh = (PIMAGE_ARCHIVE_MEMBER_HEADER)dwptr1;
+        lib->amh_objects = amh;
+
+    } else {
+        // NO longname mbmer
+        lib->amh_longname = NULL;
+        lib->am_longname = NULL;
+        lib->amh_objects = amh;
+    }
 
     return lib;
 }
@@ -248,6 +253,64 @@ cheap2el_coff_lib_enumerate_members(
             result++;
             break;
         }
+    }
+    return result;
+}
+
+// }}}
+// {{{ cheap2el_coff_lib_enumerate_symbols()
+
+int
+cheap2el_coff_lib_enumerate_symbols(
+        PCHEAP2EL_COFF_LIB lib,
+        CHEAP2EL_COFF_LIB_ENUM_SYMBOL_CALLBACK cb,
+        LPVOID lpApplicationData
+        )
+{
+    int result = 0;
+    PIMAGE_ARCHIVE_MEMBER_HEADER amh = NULL;
+    DWORD dwptr = 0, dwptr2;
+    BYTE szName[17];
+    char *szLongName;
+
+    WORD wbuf;
+    DWORD *Offsets = lib->linker2.Offsets;
+    WORD *Indices = lib->linker2.Indices;
+    char *sz_symname = lib->linker2.StringTable;
+
+    if (NULL == cb) {
+        return 0;
+    }
+
+    for (result = 0; result < lib->linker2.NumberOfSymbols; result++) {
+        wbuf = Indices[result];
+        dwptr = lib->dwBase + Offsets[wbuf - 1];
+        amh = (PIMAGE_ARCHIVE_MEMBER_HEADER)dwptr;
+        ZeroMemory(szName, sizeof(szName));
+
+        if (CHEAP2EL_COFF_LIB_AM_SPCHAR != amh->Name[0]) {
+            memcpy(szName, amh->Name, sizeof(szName) - 1);
+            StrTrimA(szName, 
+                    CHEAP2EL_COFF_LIB_AM_SPSTR CHEAP2EL_COFF_LIB_AM_PADDING);
+            szLongName = szName;
+        } else {
+            dwptr2 = (DWORD)lib->am_longname;
+            dwptr2 += cheap2el_coff_lib_get_longname_offset(amh->Name);
+            szLongName = (char*)dwptr2;
+        }
+
+        if (NULL != cb && 
+                cb(lib, sz_symname, amh, szLongName, (LPVOID)dwptr,
+                    cheap2el_coff_lib_get_am_size(amh),
+                    result, lpApplicationData)) {
+            result++;
+            break;
+        }
+
+        while ('\0' != *sz_symname) {
+            sz_symname++;
+        }
+        sz_symname++;
     }
     return result;
 }
