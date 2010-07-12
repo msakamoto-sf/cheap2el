@@ -386,6 +386,24 @@ cheap2el_coff_lib_enumerate_members(
         LPVOID lpApplicationData
         );
 
+typedef BOOL (*CHEAP2EL_COFF_LIB_ENUM_SYMBOL_CALLBACK)(
+        PCHEAP2EL_COFF_LIB lib,
+        char *sz_symname,
+        PIMAGE_ARCHIVE_MEMBER_HEADER amh,
+        char *sz_longname,
+        LPVOID member,
+        size_t size,
+        int order,
+        LPVOID lpApplicationData
+        );
+
+int
+cheap2el_coff_lib_enumerate_symbols(
+        PCHEAP2EL_COFF_LIB lib,
+        CHEAP2EL_COFF_LIB_ENUM_SYMBOL_CALLBACK cb,
+        LPVOID lpApplicationData
+        );
+
 #ifdef __cplusplus
 }
 #endif
