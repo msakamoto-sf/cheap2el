@@ -1,0 +1,5 @@
+LIBRARY pe_normal32_forward.dll
+EXPORTS
+    funcA1
+    funcB1 = pe_normal32_forward_stub.funcB2
+    funcC1

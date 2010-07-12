@@ -1,0 +1,6 @@
+LIBRARY pe_normal32_Nbinds_stubD0.dll
+EXPORTS
+    funcD1 = pe_normal32_Nbinds_stubD1.funcD1
+    funcD2 = pe_normal32_Nbinds_stubD2.funcD2
+    funcD3 = pe_normal32_Nbinds_stubD3.funcD3
+

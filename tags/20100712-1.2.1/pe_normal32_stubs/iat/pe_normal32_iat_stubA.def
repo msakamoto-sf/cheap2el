@@ -1,0 +1,6 @@
+LIBRARY pe_normal32_iat_stubA.dll
+EXPORTS
+    funcA1
+    funcA2 @2 NONAME
+    varsA DATA
+
