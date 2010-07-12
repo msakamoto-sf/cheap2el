@@ -223,16 +223,16 @@ cheap2el_coff_lib_enumerate_members(
     BYTE szName[17];
     char *szLongName;
     DWORD *Offsets = NULL;
+    size_t size;
 
     if (NULL == cb) {
         return 0;
     }
 
-    for (result = 0, Offsets = lib->linker2.Offsets;
-            result < lib->linker2.NumberOfMembers;
-            result++, Offsets++) {
-        dwptr = lib->dwBase + *Offsets;
-        amh = (PIMAGE_ARCHIVE_MEMBER_HEADER)dwptr;
+    amh = lib->amh_objects;
+    dwptr = (DWORD)amh;
+    for (result = 0; result < lib->linker2.NumberOfMembers; result++) {
+        dwptr += IMAGE_SIZEOF_ARCHIVE_MEMBER_HDR;
         ZeroMemory(szName, sizeof(szName));
 
         if (CHEAP2EL_COFF_LIB_AM_SPCHAR != amh->Name[0]) {
@@ -246,13 +246,16 @@ cheap2el_coff_lib_enumerate_members(
             szLongName = (char*)dwptr2;
         }
 
+        size = cheap2el_coff_lib_get_am_size(amh);
         if (NULL != cb && 
                 cb(lib, amh, szLongName, (LPVOID)dwptr,
-                    cheap2el_coff_lib_get_am_size(amh),
-                    result, lpApplicationData)) {
+                    size, result, lpApplicationData)) {
             result++;
             break;
         }
+
+        dwptr = _cheap2el_coff_lib_adjust_amh_offset(dwptr + size);
+        amh = (PIMAGE_ARCHIVE_MEMBER_HEADER)dwptr;
     }
     return result;
 }
@@ -286,6 +289,7 @@ cheap2el_coff_lib_enumerate_symbols(
         wbuf = Indices[result];
         dwptr = lib->dwBase + Offsets[wbuf - 1];
         amh = (PIMAGE_ARCHIVE_MEMBER_HEADER)dwptr;
+        dwptr += IMAGE_SIZEOF_ARCHIVE_MEMBER_HDR;
         ZeroMemory(szName, sizeof(szName));
 
         if (CHEAP2EL_COFF_LIB_AM_SPCHAR != amh->Name[0]) {

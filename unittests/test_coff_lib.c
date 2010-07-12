@@ -251,7 +251,7 @@ void test_coff_lib_map_nolongname(void)
 }
 
 // }}}
-// {{{ test_coff_lib_enumerate_members()
+// {{{ test_coff_lib_enumerate_membersN()
 
 static BOOL
 _test_coff_lib_enumerate_members_cbN(
@@ -286,7 +286,7 @@ _test_coff_lib_enumerate_members_cbN(
     return FALSE;
 }
 
-void test_coff_lib_enumerate_members(void)
+void test_coff_lib_enumerate_membersN(void)
 {
     PCHEAP2EL_COFF_LIB lib = NULL;
     LPVOID lpvBuffer = NULL;
@@ -323,6 +323,188 @@ void test_coff_lib_enumerate_members(void)
     // no callback
     result = cheap2el_coff_lib_enumerate_members(lib, NULL, (LPVOID)NULL);
     CU_ASSERT_FALSE(result);
+
+    GlobalFree(lib);
+    GlobalFree(lpvBuffer);
+}
+
+// }}}
+// {{{ test_coff_lib_enumerate_members2()
+
+static BOOL
+_test_coff_lib_enumerate_members_cb2(
+        PCHEAP2EL_COFF_LIB lib,
+        PIMAGE_ARCHIVE_MEMBER_HEADER amh,
+        char *sz_longname,
+        LPVOID member,
+        size_t size,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    int *when_return_true  = (int*)lpApplicationData;
+    struct {
+        BYTE on[16];
+        char *ln;
+        int sz;
+    } expected[] = {
+        {"b.obj/          ", "b.obj", 606},
+        {"a.obj/          ", "a.obj", 606},
+    };
+
+    if (order == *when_return_true) {
+        return TRUE;
+    }
+
+    CU_ASSERT_FALSE(memcmp(amh->Name, expected[order].on, 1));
+    CU_ASSERT_STRING_EQUAL(sz_longname, expected[order].ln);
+    CU_ASSERT_EQUAL(size, expected[order].sz);
+    CU_ASSERT_FALSE(memcmp("\x4C\x01\x04\x00", member, 4));
+    return FALSE;
+}
+
+void test_coff_lib_enumerate_members2(void)
+{
+    PCHEAP2EL_COFF_LIB lib = NULL;
+    LPVOID lpvBuffer = NULL;
+    CHEAP2EL_ERROR_CODE err;
+    int i, result = 0, appdata;
+
+    // loadding and mapping test data
+    lpvBuffer = _load_test_data("datafiles\\pe_normal32_lib02.lib");
+    if (NULL == lpvBuffer) {
+        CU_FAIL("load error");
+        return;
+    }
+    err = 0;
+    lib = cheap2el_coff_lib_map_from_memory(lpvBuffer, &err);
+
+    // callback return false
+    appdata = -1;
+    result = cheap2el_coff_lib_enumerate_members(lib,
+            _test_coff_lib_enumerate_members_cb2, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 2);
+
+    // callback return true (1st entry)
+    appdata = 0;
+    result = cheap2el_coff_lib_enumerate_members(lib,
+            _test_coff_lib_enumerate_members_cb2, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 1);
+
+    GlobalFree(lib);
+    GlobalFree(lpvBuffer);
+}
+
+// }}}
+// {{{ test_coff_lib_enumerate_members1()
+
+static BOOL
+_test_coff_lib_enumerate_members_cb1(
+        PCHEAP2EL_COFF_LIB lib,
+        PIMAGE_ARCHIVE_MEMBER_HEADER amh,
+        char *sz_longname,
+        LPVOID member,
+        size_t size,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    int *when_return_true  = (int*)lpApplicationData;
+    struct {
+        BYTE on[16];
+        char *ln;
+        int sz;
+    } expected[] = {
+        {"a.obj/          ", "a.obj", 497},
+    };
+
+    if (order == *when_return_true) {
+        return TRUE;
+    }
+
+    CU_ASSERT_FALSE(memcmp(amh->Name, expected[order].on, 1));
+    CU_ASSERT_STRING_EQUAL(sz_longname, expected[order].ln);
+    CU_ASSERT_EQUAL(size, expected[order].sz);
+    CU_ASSERT_FALSE(memcmp("\x4C\x01\x03\x00", member, 4));
+    return FALSE;
+}
+
+void test_coff_lib_enumerate_members1(void)
+{
+    PCHEAP2EL_COFF_LIB lib = NULL;
+    LPVOID lpvBuffer = NULL;
+    CHEAP2EL_ERROR_CODE err = 0;
+    int i, result = 0, appdata;
+
+    // loadding and mapping test data
+    lpvBuffer = _load_test_data("datafiles\\pe_normal32_lib00.lib");
+    if (NULL == lpvBuffer) {
+        CU_FAIL("load error");
+        return;
+    }
+    lib = cheap2el_coff_lib_map_from_memory(lpvBuffer, &err);
+    CU_ASSERT_PTR_NOT_NULL(lib);
+    CU_ASSERT_EQUAL(err, 0);
+
+    // callback return false
+    appdata = -1;
+    result = cheap2el_coff_lib_enumerate_members(lib,
+            _test_coff_lib_enumerate_members_cb1, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 1);
+
+    // callback return true (1st entry)
+    appdata = 0;
+    result = cheap2el_coff_lib_enumerate_members(lib,
+            _test_coff_lib_enumerate_members_cb1, (LPVOID)(&appdata));
+    CU_ASSERT_EQUAL(result, 1);
+
+    GlobalFree(lib);
+    GlobalFree(lpvBuffer);
+}
+
+// }}}
+// {{{ test_coff_lib_enumerate_symbols0()
+
+static BOOL
+_test_coff_lib_enumerate_symbols_cb0(
+        PCHEAP2EL_COFF_LIB lib,
+        char *sz_symname,
+        PIMAGE_ARCHIVE_MEMBER_HEADER amh,
+        char *sz_longname,
+        LPVOID member,
+        size_t size,
+        int order,
+        LPVOID lpApplicationData
+        )
+{
+    DWORD *p;
+    p = (DWORD*)lpApplicationData;
+    *p = 1;
+    return FALSE;
+}
+
+void test_coff_lib_enumerate_symbols0(void)
+{
+    PCHEAP2EL_COFF_LIB lib = NULL;
+    LPVOID lpvBuffer = NULL;
+    CHEAP2EL_ERROR_CODE err = 0;
+    int i, result = 0;
+    DWORD indicator = 0;
+
+    // loadding and mapping test data
+    lpvBuffer = _load_test_data("datafiles\\pe_normal32_lib00.lib");
+    if (NULL == lpvBuffer) {
+        CU_FAIL("load error");
+        return;
+    }
+    lib = cheap2el_coff_lib_map_from_memory(lpvBuffer, &err);
+    CU_ASSERT_PTR_NOT_NULL(lib);
+    CU_ASSERT_EQUAL(err, 0);
+
+    // callback return false
+    result = cheap2el_coff_lib_enumerate_symbols(lib,
+            _test_coff_lib_enumerate_symbols_cb0, (LPVOID)(&indicator));
+    CU_ASSERT_FALSE(indicator);
 
     GlobalFree(lib);
     GlobalFree(lpvBuffer);
@@ -368,6 +550,7 @@ _test_coff_lib_enumerate_symbols_cbN(
     CU_ASSERT_FALSE(memcmp(amh->Name, expected[order].on, 1));
     CU_ASSERT_STRING_EQUAL(sz_longname, expected[order].ln);
     CU_ASSERT_EQUAL(size, expected[order].sz);
+    CU_ASSERT_FALSE(memcmp("\x4C\x01\x04\x00", member, 4));
 
 //    printf("[%s], %s\n", sz_symname, sz_longname);
     return FALSE;
