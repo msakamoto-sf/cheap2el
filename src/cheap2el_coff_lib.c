@@ -25,7 +25,7 @@
 #include <shlwapi.h>
 #pragma comment(lib, "shlwapi.lib")
 
-// {{{ _cheap2el_coff_lib_adjust_amh_offset
+// {{{ _cheap2el_coff_lib_adjust_amh_offset()
 
 static DWORD
 _cheap2el_coff_lib_adjust_amh_offset(
@@ -38,6 +38,42 @@ _cheap2el_coff_lib_adjust_amh_offset(
     } else {
         return offset;
     }
+}
+
+// }}}
+// {{{ _cheap2el_coff_lib_extract_linker2()
+
+static void
+_cheap2el_coff_lib_extract_linker2(
+        PCHEAP2EL_COFF_LIB lib
+        )
+{
+    DWORD dwbuf;
+    DWORD *dwptr;
+    LPVOID lpvbuf = NULL;
+
+    // set NumberOfMembers
+    dwbuf = (DWORD)lib->am_linker2;
+    dwptr = (DWORD*)dwbuf;
+    lib->linker2.NumberOfMembers = *dwptr;
+
+    // set Offsets
+    dwbuf += sizeof(DWORD);
+    lib->linker2.Offsets = (DWORD*)dwbuf;
+
+    // set NumberOfSymbols
+    dwbuf += lib->linker2.NumberOfMembers * sizeof(DWORD);
+    dwptr = (DWORD*)dwbuf;
+    lib->linker2.NumberOfSymbols = *dwptr;
+
+    // set Indices
+    dwbuf += sizeof(DWORD);
+    lib->linker2.Indices = (WORD*)dwbuf;
+
+    // set StringTable
+    dwbuf += lib->linker2.NumberOfSymbols * sizeof(WORD);
+    lpvbuf = (LPVOID)dwbuf;
+    lib->linker2.StringTable = (char*)lpvbuf;
 }
 
 // }}}
@@ -140,6 +176,8 @@ cheap2el_coff_lib_map_from_memory(
         return NULL;
     }
 
+    _cheap2el_coff_lib_extract_linker2(lib);
+
     // longname member
     size = cheap2el_coff_lib_get_am_size(amh);
     dwptr1 = _cheap2el_coff_lib_adjust_amh_offset(dwptr1 + size);
@@ -179,26 +217,16 @@ cheap2el_coff_lib_enumerate_members(
     DWORD dwptr = 0, dwptr2;
     BYTE szName[17];
     char *szLongName;
-    DWORD *dwpNumMem = NULL;
-    DWORD *dwpOffsetMem = NULL;
-    LPVOID lpvLinker2Member;
+    DWORD *Offsets = NULL;
 
     if (NULL == cb) {
         return 0;
     }
 
-    //TODO replace following codes with newer analyzing function.
-
-    // get number of object linker members
-    dwptr = (DWORD)lib->am_linker2;
-    lpvLinker2Member = (LPVOID)dwptr;
-    dwpNumMem = (DWORD*)lpvLinker2Member;
-
-    // get member offset array
-    dwpOffsetMem = (DWORD*)(dwptr + sizeof(DWORD));
-
-    for (result = 0; result < *dwpNumMem; result++, dwpOffsetMem++) {
-        dwptr = lib->dwBase + *dwpOffsetMem;
+    for (result = 0, Offsets = lib->linker2.Offsets;
+            result < lib->linker2.NumberOfMembers;
+            result++, Offsets++) {
+        dwptr = lib->dwBase + *Offsets;
         amh = (PIMAGE_ARCHIVE_MEMBER_HEADER)dwptr;
         ZeroMemory(szName, sizeof(szName));
 

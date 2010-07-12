@@ -130,13 +130,16 @@ void test_coff_lib_map_from_memory(void)
     }
     lib = NULL; err = 0;
     lib = cheap2el_coff_lib_map_from_memory(lpvBuffer, &err);
-    CU_ASSERT_PTR_NOT_NULL(lib, NULL);
+    CU_ASSERT_PTR_NOT_NULL(lib);
     CU_ASSERT_EQUAL(err, 0);
-/*
+
     CU_ASSERT_EQUAL(lib->dwBase, (DWORD)lpvBuffer);
     CU_ASSERT_EQUAL((DWORD)(lib->amh_linker1), 
             lib->dwBase + IMAGE_ARCHIVE_START_SIZE);
-*/
+
+    CU_ASSERT_EQUAL(lib->linker2.NumberOfMembers, 4);
+    CU_ASSERT_EQUAL(lib->linker2.NumberOfSymbols, 8);
+
     GlobalFree(lib);
     GlobalFree(lpvBuffer);
 }
@@ -163,8 +166,8 @@ void test_coff_lib_map_from_memory_3h(void)
             "               1278833156              0       1         `\x0A"
             "1\x0A"
             CHEAP2EL_COFF_LIB_AM_SPSTR
-            "               1278833156              0       2         `\x0A"
-            "12"
+            "               1278833156              0       8         `\x0A"
+            "\x00\x00\x00\x00" "\x00\x00\x00\x00"
             "!"
             "               1278833156              0       0         `\x0A",
         "!<arch>\x0A"
@@ -172,8 +175,8 @@ void test_coff_lib_map_from_memory_3h(void)
             "               A                       0       1         `\x0A"
             "a\x0A"
             CHEAP2EL_COFF_LIB_AM_SPSTR
-            "               B                       0       2         `\x0A"
-            "bc"
+            "               B                       0       8         `\x0A"
+            "\x00\x00\x00\x00" "\x00\x00\x00\x00"
             CHEAP2EL_COFF_LIB_AM_SPSTR
             CHEAP2EL_COFF_LIB_AM_SPSTR
             "              C                       0       3         `\x0A"
@@ -206,7 +209,7 @@ void test_coff_lib_map_from_memory_3h(void)
     CU_ASSERT_EQUAL('C', lib->amh_longname->Date[0]);
     CU_ASSERT_EQUAL('D', lib->amh_objects->Date[0]);
     CU_ASSERT_FALSE(memcmp("a", lib->am_linker1, 1));
-    CU_ASSERT_FALSE(memcmp("bc", lib->am_linker2, 2));
+    CU_ASSERT_FALSE(memcmp("\x00\x00", lib->am_linker2, 2));
     CU_ASSERT_FALSE(memcmp("def", lib->am_longname, 3));
 }
 
