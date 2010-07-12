@@ -154,7 +154,10 @@ extern void test_coff_lib_get_longname_offset(void);
 extern void test_coff_lib_map_from_memory(void);
 extern void test_coff_lib_map_from_memory_3h(void);
 extern void test_coff_lib_map_nolongname(void);
-extern void test_coff_lib_enumerate_members(void);
+extern void test_coff_lib_enumerate_membersN(void);
+extern void test_coff_lib_enumerate_members2(void);
+extern void test_coff_lib_enumerate_members1(void);
+extern void test_coff_lib_enumerate_symbols0(void);
 extern void test_coff_lib_enumerate_symbolsN(void);
 
 CU_TestInfo tests_coff_lib[] = {
@@ -163,7 +166,10 @@ CU_TestInfo tests_coff_lib[] = {
     {"test_coff_lib_map_from_memory", test_coff_lib_map_from_memory},
     {"test_coff_lib_map_from_memory_3h", test_coff_lib_map_from_memory_3h},
     {"test_coff_lib_map_nolongname", test_coff_lib_map_nolongname},
-    {"test_coff_lib_enumerate_members", test_coff_lib_enumerate_members},
+    {"test_coff_lib_enumerate_membersN", test_coff_lib_enumerate_membersN},
+    {"test_coff_lib_enumerate_members2", test_coff_lib_enumerate_members2},
+    {"test_coff_lib_enumerate_members1", test_coff_lib_enumerate_members1},
+    {"test_coff_lib_enumerate_symbols0", test_coff_lib_enumerate_symbols0},
     {"test_coff_lib_enumerate_symbolsN", test_coff_lib_enumerate_symbolsN},
     CU_TEST_INFO_NULL,
 };
