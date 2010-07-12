@@ -343,12 +343,21 @@ cheap2el_coff_lib_get_am_size(
         PIMAGE_ARCHIVE_MEMBER_HEADER amh
         );
 
+typedef struct _CHEAP2EL_COFF_LIB_LINKER2 {
+    DWORD NumberOfMembers;
+    DWORD *Offsets;
+    DWORD NumberOfSymbols;
+    WORD *Indices;
+    char *StringTable;
+} CHEAP2EL_COFF_LIB_LINKER2, *PCHEAP2EL_COFF_LIB_LINKER2;
+
 typedef struct _CHEAP2EL_COFF_LIB {
     DWORD dwBase;
     PIMAGE_ARCHIVE_MEMBER_HEADER amh_linker1;
     LPVOID am_linker1;
     PIMAGE_ARCHIVE_MEMBER_HEADER amh_linker2;
     LPVOID am_linker2;
+    CHEAP2EL_COFF_LIB_LINKER2 linker2;
     PIMAGE_ARCHIVE_MEMBER_HEADER amh_longname;
     LPVOID am_longname;
     PIMAGE_ARCHIVE_MEMBER_HEADER amh_objects;
