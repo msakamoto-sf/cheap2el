@@ -61,4 +61,15 @@ load "payload.dll" into another process when keyboard hook is called.
 ii): "remoteload.exe" shows how to call "LoadLibrary()" by 
 CreateRemoteThread(), and load "payload.dll" into target process.
 
+5. "objdump"
+
+This sample shows usage of COFF Object functions in cheap2el.
+"objdump" dumps sections, relocations and symbols in COFF Object file.
+
+6. "libdump"
+
+This sample shows usage of COFF LIB functions in cheap2el.
+"libdump" dumps file names ans symbols in COFF LIB file.
+
+
 Copyright 2010 sakamoto.gsyc.3s@gmail.com
