@@ -178,20 +178,28 @@ cheap2el_coff_lib_enumerate_members(
     PIMAGE_ARCHIVE_MEMBER_HEADER amh = NULL;
     DWORD dwptr = 0, dwptr2;
     BYTE szName[17];
-    LPVOID lpvMember;
-    int longname_offset;
     char *szLongName;
-    size_t size;
+    DWORD *dwpNumMem = NULL;
+    DWORD *dwpOffsetMem = NULL;
+    LPVOID lpvLinker2Member;
 
     if (NULL == cb) {
         return 0;
     }
 
-    amh = lib->amh_objects;
-    result = 0;
-    while (!strncmp(amh->EndHeader, IMAGE_ARCHIVE_END, 2)) {
-        dwptr = (DWORD)amh;
-        dwptr += IMAGE_SIZEOF_ARCHIVE_MEMBER_HDR;
+    //TODO replace following codes with newer analyzing function.
+
+    // get number of object linker members
+    dwptr = (DWORD)lib->am_linker2;
+    lpvLinker2Member = (LPVOID)dwptr;
+    dwpNumMem = (DWORD*)lpvLinker2Member;
+
+    // get member offset array
+    dwpOffsetMem = (DWORD*)(dwptr + sizeof(DWORD));
+
+    for (result = 0; result < *dwpNumMem; result++, dwpOffsetMem++) {
+        dwptr = lib->dwBase + *dwpOffsetMem;
+        amh = (PIMAGE_ARCHIVE_MEMBER_HEADER)dwptr;
         ZeroMemory(szName, sizeof(szName));
 
         if (CHEAP2EL_COFF_LIB_AM_SPCHAR != amh->Name[0]) {
@@ -200,23 +208,19 @@ cheap2el_coff_lib_enumerate_members(
                     CHEAP2EL_COFF_LIB_AM_SPSTR CHEAP2EL_COFF_LIB_AM_PADDING);
             szLongName = szName;
         } else {
-            longname_offset = cheap2el_coff_lib_get_longname_offset(amh->Name);
             dwptr2 = (DWORD)lib->am_longname;
-            dwptr2 += longname_offset;
+            dwptr2 += cheap2el_coff_lib_get_longname_offset(amh->Name);
             szLongName = (char*)dwptr2;
         }
 
-        size = cheap2el_coff_lib_get_am_size(amh);
         if (NULL != cb && 
-                cb(lib, amh, szLongName, (LPVOID)dwptr, size, result, lpApplicationData)) {
+                cb(lib, amh, szLongName, (LPVOID)dwptr,
+                    cheap2el_coff_lib_get_am_size(amh),
+                    result, lpApplicationData)) {
             result++;
             break;
         }
-        result++;
-        dwptr = _cheap2el_coff_lib_adjust_amh_offset(dwptr + size);
-        amh = (PIMAGE_ARCHIVE_MEMBER_HEADER)dwptr;
     }
-
     return result;
 }
 
