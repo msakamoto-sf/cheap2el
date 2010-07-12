@@ -12,7 +12,8 @@ files in C/C++ programming language.
 -- include bound imports, delay imports.
 - enumerating export tables(EAT/ENT).
 - dll pseudo loading.
-
+- enumerating COFF Object file sections, relocations, symbols.
+- enumerating COFF LIB file archive members, linker members.
 
 //-----------------------------------------------------------------------------
 // HOW TO BUILD
