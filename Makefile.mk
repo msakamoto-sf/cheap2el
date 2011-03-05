@@ -13,8 +13,13 @@ clean:force-builds
 	cd unittests && $(MAKE) $(MAKEOPTS) clean && cd ..
 
 test:force-builds
+!IF DEFINED(CUNIT_INCPATH) && DEFINED(CUNIT_LIBPATH)
 	cd src && $(MAKE) $(MAKEOPTS) && cd ..
 	set PATH=%PATH%;.\\datafiles
 	cd unittests && $(MAKE) $(MAKEOPTS) && main.exe && cd ..
+!ELSE
+!MESSAGE NOTE: "test" target is ignored, because
+!MESSAGE CUNIT_INCPATH or CUNIT_LIBPATH environment value is not defined.
+!ENDIF
 
 force-builds:

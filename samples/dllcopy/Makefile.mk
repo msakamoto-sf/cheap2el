@@ -13,7 +13,7 @@ OBJS=$(PROJNAME).obj
 !include <..\common.mk>
 
 $(TARGET):$(OBJS) dest_exe.exe src_dll.dll
-	$(CC) $(CFLAGS) $(SRCS) user32.lib psapi.lib $(CHEAP2EL_LIB)
+	$(CC) $(CFLAGS) $(OBJS) user32.lib psapi.lib $(CHEAP2EL_LIB)
 
 dest_exe.exe:dest_exe.c
 	$(CC) $(CFLAGS) /GS- dest_exe.c kernel32.lib \
