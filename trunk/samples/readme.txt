@@ -39,6 +39,9 @@ Then what happens ?
 make "src_dll.dll" image executable in "dest_exe.exe" memory, 
 and call "DllMain" in "src_dll.dll" using by CreateRemoteThread().
 
+NOTE: "dllcopy" samples don't work on Windows 7 (without Service Pack).
+Please update to Windows 7 "SP1".
+
 4. "replace_impaddr"
 
 This sample shows TWO ways of "rewrite(hook) import address" using cheap2el.
