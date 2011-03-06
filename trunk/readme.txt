@@ -26,17 +26,28 @@ c) do "nmake -f Makefile.mk" (library only)
 
 If all works fine, "cheap2el.lib" will be found in this directory.
 
-All unittest and samples are compiled, and tested on...
-  Compiled Platform : Pentium4, Windows XP SP3 (Japanese)
-  SDK : Microsoft Visual C++ 2008 Express Edition SP1 - Japanese
-  Compiler & Linker versions :
-  > cl
-  Microsoft(R) 32-bit C/C++ Optimizing Compiler Version 15.00.30729.01 for 80x86
-  Copyright (C) Microsoft Corporation.  All rights reserved.
-  > link
-  Microsoft (R) Incremental Linker Version 9.00.30729.01
-  Copyright (C) Microsoft Corporation.  All rights reserved.
+REQUIREMENTS FOR unittests BUILD:
+- c-unit header and .lib(static library) file
+- setup CUNIT_INCPATH and CUNIT_LIBPATH environment variables.
+ ex)
+ > SET CUNIT_INCPATH=(c-unit header directory)
+ > SET CUNIT_LIBPATH=(c-unit static library directory)
 
+All unittest and samples are compiled, and tested on...
+
+OS  : Windows XP SP3 (x86 32bit, Japanese)
+      Windows 7 SP1 (x86 32bit, Japanese)
+
+SDK : Microsoft Visual C++ 2008 Express Edition SP1 - Japanese
+      Microsoft Visual C++ 2010 Express Edition - Japanese
+
+Compiler & Linker Version :
+ [VC++2008 Express Edition SP1]
+ Microsoft(R) 32-bit C/C++ Optimizing Compiler Version 15.00.30729.01 for 80x86
+ Microsoft (R) Incremental Linker Version 9.00.30729.01
+ [VC++2010 Express Edition]
+ Microsoft(R) 32-bit C/C++ Optimizing Compiler Version 16.00.30319.01 for 80x86
+ Microsoft (R) Incremental Linker Version 10.00.30319.01
 
 //-----------------------------------------------------------------------------
 // HOW TO USE
