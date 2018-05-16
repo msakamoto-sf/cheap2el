@@ -160,7 +160,7 @@ prepare_local(PDLLCOPY_ARGS args)
         _print_last_error(GetLastError());
         return NULL;
     }
-    printf("lpVirtualPageLocal = 0x%08X\n", args->lpVirtualPageLocal);
+    printf("lpVirtualPageLocal = 0x%p\n", args->lpVirtualPageLocal);
 
     pe = cheap2el_map_to_memory(
             args->lpFileBuffer,
@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
     DLLCOPY_ARGS args;
     PCHEAP2EL_PE_IMAGE pe = NULL;
     CHEAP2EL_ERROR_CODE err;
-    size_t szbuf;
+    SIZE_T szbuf;
     DWORD dwptr;
 
     // find "dest_exe.exe" and get its process id.
@@ -237,14 +237,14 @@ int main(int argc, char *argv[])
         fprintf(stderr, "VirtualAllocEx() failed\n");
         return 4;
     }
-    printf("virtual page is allocated from 0x%08X\n", args.lpVirtualPageRemote);
+    printf("virtual page is allocated from 0x%p\n", args.lpVirtualPageRemote);
     // prepare dll images executable in local memory
     pe = prepare_local(&args);
     if (NULL == pe) {
         fprintf(stderr, "prepare_local() failed\n");
         return 5;
     }
-    printf("image is ready for copy in local memory at 0x%08X\n",
+    printf("image is ready for copy in local memory at 0x%p\n",
             args.lpVirtualPageLocal);
 
     printf(">>> HIT RETURN KEY : copy dll images to dest_exe.exe\n");
