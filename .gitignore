@@ -5,3 +5,5 @@
 *.exp
 *.exe
 *.dll
+
+*.def
