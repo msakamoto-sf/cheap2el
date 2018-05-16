@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
     CHEAP2EL_ERROR_CODE err = 0;
     char *cmd = NULL;
     char *file = NULL;
-    int result;
+    int result = 0;
     PIMAGE_SECTION_HEADER head;
     int i;
 
@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
             coff->fileHeader->NumberOfSymbols);
     printf("\n");
 
-    if (!stricmp("sect", cmd)) {
+    if (!_stricmp("sect", cmd)) {
         printf("==> SECTIONS <==\n");
         printf("[#]\t[Offset]\t[Size]\t[Offset(Reloc)]\t[Reloc#]\t[Character]\t[Name]\n");
         head = coff->sectionHeaders;
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
                     head->Characteristics, head->Name);
         }
         printf("-----------------\n%d sections.\n", i);
-    } else if (!stricmp("reloc", cmd)) {
+    } else if (!_stricmp("reloc", cmd)) {
         printf("==> RELOCATIONS <==\n");
         printf("[VirtualAddress]\t[Symbol#]\t[Type]\t[Section]\n");
         head = coff->sectionHeaders;
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
                     enum_reloc_cb, (LPVOID)NULL);
         }
         printf("-----------------\n%d relocations.\n", result);
-    } else if (!stricmp("sym", cmd)) {
+    } else if (!_stricmp("sym", cmd)) {
         printf("[#]\t[Value]\t[Sect#]\t[Type]\t[Storage]\t[Aux#]\t[Name]\n");
         result = cheap2el_coff_obj_enumerate_symbols(coff,
             enum_sym_cb, (LPVOID)NULL);
