@@ -122,11 +122,7 @@ int main(int argc, char *argv[])
     CHEAP2EL_CALLBACK_RESOLVE_IMPORTS_ARG arg;
     LPVOID lpVirtualPage;
     DWORD dwptr, len;
-    DWORD (*pfunc)(void);
-    DWORD dwVersion = 0; 
-    DWORD dwMajorVersion = 0;
-    DWORD dwMinorVersion = 0; 
-    DWORD dwBuild = 0;
+    size_t (*pfunc)(char*);
 
     if (!get_payload_dll(IDR_RCDATA1, &dwptr, &len)) {
         _print_last_error(GetLastError());
@@ -145,7 +141,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "_load_and_map_rawdata() failed\n");
         return 2;
     }
-    printf("payload dll is extracted from 0x%08X\n", lpVirtualPage);
+    printf("payload dll is extracted from 0x%p\n", lpVirtualPage);
 
     if (!cheap2el_pseudo_load_address_resolver(pe, &arg)) {
         _print_last_error(arg.dwLastError);
@@ -153,20 +149,14 @@ int main(int argc, char *argv[])
         return 3;
     }
 
-    // get exported function "get_version" pointer
-    dwptr = cheap2el_get_export_rva_by_name(pe, "get_version");
+    // get exported function "hello_msgbox" pointer
+    dwptr = cheap2el_get_export_rva_by_name(pe, "hello_msgbox");
     dwptr += pe->dwActualImageBase;
-    pfunc = (DWORD (*)(void))(dwptr);
+    pfunc = (size_t (*)(char*))(dwptr);
 
-    // call "get_version" and display result
-    dwVersion = pfunc();
-    dwMajorVersion = (DWORD)(LOBYTE(LOWORD(dwVersion)));
-    dwMinorVersion = (DWORD)(HIBYTE(LOWORD(dwVersion)));
-    if (dwVersion < 0x80000000) {
-        dwBuild = (DWORD)(HIWORD(dwVersion));
-    }
-    printf("Version is %d.%d (%d)\n", 
-            dwMajorVersion, dwMinorVersion, dwBuild);
+    // call "hello_msgbox" and display result
+    size_t pfunc_r_len = pfunc("Are you fine ?");
+    printf("strlen() = %d\n", pfunc_r_len);
 
     GlobalFree(pe);
     if (!VirtualFree(lpVirtualPage, 0, MEM_RELEASE)) {
