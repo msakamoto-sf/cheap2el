@@ -56,10 +56,12 @@ When you play this samples, you have to open two command prompts.
 2. execute "hookctrl.exe" or "remoteload.exe" in another command prompt.
 
 Two ways of "rewrite(hook) import address" are:
-1. Use HOOK to load "payload.dll" in target process.
+1. Use SetWindowsHook to load "payload.dll" in target process.
    - "hookctrl.exe" and "hook.dll" shows how to setup keyboard hook and load "payload.dll" into another process when keyboard hook is called.
-2. Call "LoadLibrary("payload.dll")" directly by using CreateRemoteThread() in target process.
-   - "remoteload.exe" shows how to call "LoadLibrary()" by CreateRemoteThread(), and load "payload.dll" into target process.
+2. Call LoadLibrary("payload.dll") directly by using CreateRemoteThread() in target process.
+   - "remoteload.exe" shows how to call LoadLibrary() by CreateRemoteThread(), and load "payload.dll" into target process.
+
+For detailed component description, see [README.md](./replace/impaddr/).
 
 ### 5. "objdump"
 

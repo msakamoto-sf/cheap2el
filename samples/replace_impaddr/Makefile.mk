@@ -32,5 +32,5 @@ stubfwd.dll:stubfwd.c stubfwd.def
 	$(CC) $(CFLAGS) /LD stubfwd.c user32.lib /link /def:stubfwd.def
 
 clean:
-	del *.exe *.dll *.exp *.lib *.obj *.res
+	del *.exe *.dll *.exp *.lib *.obj *.res *.cod
 

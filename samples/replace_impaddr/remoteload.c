@@ -81,11 +81,11 @@ int main(int argc, char *argv[])
     DWORD dwDestProcId;
     DWORD dwThreadId;
     DWORD dwThreadExitCode;
-    LPVOID lpvLoadLibraryA = NULL;
+    FARPROC lpvLoadLibraryA = NULL;
     LPVOID lpvDllName = NULL;
     char *dllname = "payload.dll";
     char *targetname = "target.exe";
-    size_t szbuf;
+    SIZE_T szbuf;
 
     // find target process and get its process id.
     dwDestProcId = find_proc_id(targetname);
