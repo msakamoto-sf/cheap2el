@@ -5,8 +5,8 @@ This directory includes sample projects using cheap2el.
 ## How to build samples
 
 1. open your visual studio command prompt.
-2. cd to each sample directory you want to build.
-3. do `nmake -f Makefile.mk`
+2. cd to here (or each sample directory you want to build).
+3. do `nmake`
 
 ## Samples brief summaries
 
