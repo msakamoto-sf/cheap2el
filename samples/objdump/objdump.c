@@ -131,6 +131,7 @@ int main(int argc, char *argv[])
     int result = 0;
     PIMAGE_SECTION_HEADER head;
     int i;
+    int relocsum = 0;
 
     if (3 != argc) {
         fprintf(stderr, "usage: %s [sect|reloc|sym] foobar.obj", argv[0]);
@@ -180,8 +181,9 @@ int main(int argc, char *argv[])
         for (i = 0; i < coff->fileHeader->NumberOfSections; i++, head++) {
             result = cheap2el_coff_obj_enumerate_relocations(coff, head, 
                     enum_reloc_cb, (LPVOID)NULL);
+            relocsum += result;
         }
-        printf("-----------------\n%d relocations.\n", result);
+        printf("-----------------\n%d relocations.\n", relocsum);
     } else if (!_stricmp("sym", cmd)) {
         printf("[#]\t[Value]\t[Sect#]\t[Type]\t[Storage]\t[Aux#]\t[Name]\n");
         result = cheap2el_coff_obj_enumerate_symbols(coff,
