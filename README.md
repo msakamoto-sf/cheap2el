@@ -15,7 +15,7 @@ cheap2el is tiny library for exploring Windows PE(Portable Executable) format fi
 
   1. open your visual studio command prompt.
   1. cd to top of source directory.
-  1. do "nmake -f Makefile.mk" (library only) or "nmake -f Makefile.mk test" (library and unittests)
+  1. do `nmake` (library only) or `nmake test` (library and unittests)
 
 If all works fine, "cheap2el.lib" will be found in top of source directory.
 

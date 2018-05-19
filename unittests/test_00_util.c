@@ -23,7 +23,6 @@
 #include "cheap2el.h"
 #include <windows.h>
 #include <stdio.h>
-#include "CUnit.h"
 
 // {{{ _hexdump()
 
@@ -114,7 +113,6 @@ _load_and_map_test_data(
 
     arg->lpFileBuffer = _load_test_data(lpFileName);
     if (NULL == arg->lpFileBuffer) {
-        CU_FAIL("memory error");
         return NULL;
     }
 
@@ -146,7 +144,6 @@ _load_and_map_test_data2(LPVOID addr, plam_arg2 arg, LPCSTR lpFileName, CHEAP2EL
 
     arg->lpFileBuffer = _load_test_data(lpFileName);
     if (NULL == arg->lpFileBuffer) {
-        CU_FAIL("memory error");
         return NULL;
     }
 
@@ -157,7 +154,6 @@ _load_and_map_test_data2(LPVOID addr, plam_arg2 arg, LPCSTR lpFileName, CHEAP2EL
             addr, nLen, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
     if (NULL == arg->lpVirtualPage) {
         _print_last_error(GetLastError());
-        CU_FAIL("VirtualAlloc() error");
         return NULL;
     }
 
