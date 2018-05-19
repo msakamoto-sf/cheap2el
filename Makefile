@@ -3,7 +3,7 @@
 # $Id$
 #
 
-MAKEOPTS=-f Makefile.mk -nologo
+MAKEOPTS=-nologo
 
 cheap2el:force-builds
 	cd src && $(MAKE) $(MAKEOPTS) && cd ..
