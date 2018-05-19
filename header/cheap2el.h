@@ -35,7 +35,7 @@ extern "C" {
 /* interface version */
 #define CHEAP2EL_VERSION_MINOR (2)
 /* implementation version */
-#define CHEAP2EL_VERSION_RELEASE (1)
+#define CHEAP2EL_VERSION_RELEASE (3)
 
 void
 cheap2el_version(
