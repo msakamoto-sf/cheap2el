@@ -11,7 +11,7 @@ OBJS=$(PROJNAME).obj
 !include <..\common.mk>
 
 $(TARGET):$(OBJS)
-	$(CC) $(CFLAGS) /Fe$(TARGET) $(OBJS) $(CHEAP2EL_LIB) /link $(LFLAGS)
+	$(CC) $(CFLAGS) /Fe$(TARGET) $(OBJS) $(CHEAP2EL_LIB) /link /NOLOGO
 
 dll2.def:$(TARGET)
 	$(CC) $(CFLAGS) /LD dll1.c

@@ -3,5 +3,5 @@
 # $Id$
 #
 
-CFLAGS=/I $(CUNIT_INCPATH) /Od /Ob0 /Gd /nologo
-LFLAGS=/LIBPATH:$(CUNIT_LIBPATH) /NOLOGO
+CFLAGS=/Od /Ob0 /Gd /W4 /nologo
+LFLAGS=/NOLOGO

@@ -18,7 +18,7 @@ $(TARGET):$(OBJS) $(PROJNAME).res payload.dll
 dllres.res:dllres.rc payload.dll
 
 payload.dll:payload.obj
-	$(CC) $(CFLAGS) /LD payload.c kernel32.lib /link /noentry
+	$(CC) $(CFLAGS) /LD payload.c user32.lib
 
 clean:
 	del *.exe *.dll *.exp *.lib *.obj *.res

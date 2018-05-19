@@ -5,3 +5,7 @@
 *.exp
 *.exe
 *.dll
+
+*.def
+*.res
+*.cod

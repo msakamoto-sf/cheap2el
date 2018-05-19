@@ -35,7 +35,7 @@ DWORD __declspec(dllexport) WINAPI msgbox_thread(LPVOID lpParam)
 
     while (1) {
         for (i = 0; i < 26; i++) {
-            msg[17] = i + 0x41;
+            msg[17] = (char)(i + 0x41);
             MyMessageBox(NULL, msg, "caption", MB_OK);
             Sleep(3000);
         }

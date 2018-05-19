@@ -21,7 +21,7 @@
  */
 
 #include <stdio.h>
-
+#include <stdlib.h>
 #include "Basic.h"
 
 // {{{ CU_TestInfo tests_mapper[] and externs

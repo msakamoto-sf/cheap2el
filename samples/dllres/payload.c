@@ -20,9 +20,11 @@
  * $Id$
  */
 
+#include <string.h>
 #include <windows.h>
 
-DWORD __declspec(dllexport) get_version(void)
+size_t __declspec(dllexport) hello_msgbox(const char *s)
 {
-	return GetVersion();
+    MessageBoxA(NULL, s, "hello", MB_OK);
+    return strlen(s);
 }

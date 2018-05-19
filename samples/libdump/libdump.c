@@ -150,12 +150,12 @@ int main(int argc, char *argv[])
         return 3;
     }
 
-    if (!stricmp("list", cmd)) {
+    if (!_stricmp("list", cmd)) {
         printf("[Offset]\t[FileName]\t[Size]\n");
         result = cheap2el_coff_lib_enumerate_members(lib,
             enum_list_cb, (LPVOID)NULL);
         printf("-----------------\n%d files.\n", result);
-    } else if (!stricmp("sym", cmd)) {
+    } else if (!_stricmp("sym", cmd)) {
         printf("[Symbol]\t[Offset]\t[FileName]\t[Size]\n");
         result = cheap2el_coff_lib_enumerate_symbols(lib,
             enum_sym_cb, (LPVOID)NULL);

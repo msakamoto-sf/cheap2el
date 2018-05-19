@@ -16,7 +16,8 @@ OBJS=test_00_main.obj \
 
 !include <..\common.mk>
 
-CFLAGS=$(CFLAGS) /I ..\header
+CFLAGS=$(CFLAGS) /I ..\header /I .\c-unit-1.1.1\CUnit\Headers
+LFLAGS=$(LFLAGS) /LIBPATH:.\c-unit-1.1.1
 
 $(TARGET):$(OBJS) ..\cheap2el.lib
 	$(CC) $(CFLAGS) /Fe$(TARGET) $(OBJS) libcunit.lib ..\cheap2el.lib /link $(LFLAGS)
