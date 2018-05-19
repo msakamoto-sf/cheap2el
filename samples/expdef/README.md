@@ -12,7 +12,7 @@ overview:
 
 1. open your visual studio command prompt.
 2. cd to each sample directory you want to build.
-3. do `nmake -f Makefile.mk`
+3. do `nmake`
 
 When all works fine, we obtain "expdef.exe".
 
@@ -20,7 +20,7 @@ When all works fine, we obtain "expdef.exe".
 
 Next, generate module definition file (.def) using expdef for "dll1.dll".
 
-1. do `nmake -f Makefile.mk dll2.def`.
+1. do `nmake dll2.def`.
 
 Why "dll2.def" ? Because, ".def" for dll1.dll will be reused to export and forwarding symbols for dll2.dll build.
 
@@ -60,7 +60,7 @@ Using this .def file, "dll2.dll" export "func1()" in itself, and forward "func2"
 
 ## STEP 4 : Build "dll2.dll"
 
-1. do `nmake -f Makefile.mk dll2.dll`
+1. do `nmake dll2.dll`
 
 All works fine, then we obtain "dll2.dll".
 

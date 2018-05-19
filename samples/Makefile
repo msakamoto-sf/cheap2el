@@ -2,7 +2,7 @@
 # cheap2el : library
 #
 
-MAKEOPTS=-f Makefile.mk -nologo
+MAKEOPTS=-nologo
 
 all:
     cd expdef && $(MAKE) $(MAKEOPTS) && cd ..
