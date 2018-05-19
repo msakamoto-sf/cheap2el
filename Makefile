@@ -9,7 +9,6 @@ cheap2el:force-builds
 	cd src && $(MAKE) $(MAKEOPTS) && cd ..
 
 test:force-builds
-	cd src && $(MAKE) $(MAKEOPTS) && cd ..
 	set PATH=%PATH%;.\\datafiles
 	cd unittests && $(MAKE) $(MAKEOPTS) && main.exe && cd ..
 

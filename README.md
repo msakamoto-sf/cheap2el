@@ -14,35 +14,30 @@ cheap2el is tiny library for exploring Windows PE(Portable Executable) format fi
 ## HOW TO BUILD ##
 
   1. open your visual studio command prompt.
-  1. cd to top of source directory.
-  1. do `nmake` (library only) or `nmake test` (library and unittests)
+  2. cd to top of source directory.
+  3. do
+     1. `nmake cheap2el` (for cheap2el.lib) -> if build success, "cheap2el.lib" will be created in top of source directory.
+     2. `nmake test` (for unittests) 
+     3. `nmake samples` (for samples)
+     4. `nmake clean` (remove all obj, exe, dlls)
 
-If all works fine, "cheap2el.lib" will be found in top of source directory.
-
-**REQUIREMENTS FOR unittests BUILD**
-  * c-unit header and .lib file
-  * setup CUNIT\_INCPATH and CUNIT\_LIBPATH environment variables.
-```
-ex)
- > SET CUNIT_INCPATH=(c-unit header directory)
- > SET CUNIT_LIBPATH=(c-unit static library directory)
-```
 
 All unittest and samples are compiled, and tested on...
 ```
-OS  : Windows XP SP3 (x86 32bit, Japanese)
-      Windows 7 SP1 (x86 32bit, Japanese)
+OS  : Windows 10 Pro (64bit, Japanese)
 
-SDK : Microsoft Visual C++ 2008 Express Edition SP1 - Japanese
-      Microsoft Visual C++ 2010 Express Edition - Japanese
+SDK : Microsoft Visual Studio 2017 Community Edition + Windows SDK 10.0.16299.0
+
+Build : from x86 Native Tools Command Prompt
 
 Compiler & Linker Version :
- [VC++2008 Express Edition SP1]
- Microsoft(R) 32-bit C/C++ Optimizing Compiler Version 15.00.30729.01 for 80x86
- Microsoft (R) Incremental Linker Version 9.00.30729.01
- [VC++2010 Express Edition]
- Microsoft(R) 32-bit C/C++ Optimizing Compiler Version 16.00.30319.01 for 80x86
- Microsoft (R) Incremental Linker Version 10.00.30319.01
+> cl
+Microsoft(R) C/C++ Optimizing Compiler Version 19.13.26131.1 for x86
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+> link
+Microsoft (R) Incremental Linker Version 14.13.26131.1
+Copyright (C) Microsoft Corporation.  All rights reserved.
 ```
 
 ## HOW TO USE ##
